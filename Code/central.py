@@ -2,7 +2,7 @@ import json
 import time
 import threading
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
-from area import Area
+from Code.area import Area
 
 class Centrala:
     def __init__(self):

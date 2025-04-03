@@ -1,7 +1,7 @@
 import random
 import json
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
-from area import Area
+from Code.area import Area
 
 client = RemoteAPIClient()
 sim = client.require('sim')
@@ -23,45 +23,47 @@ def is_overlapping(x, y):
             return True
     return False
 
-for index in range(num_planes):
-    while True:
-        x = round(random.uniform(-6.5, 6.5), 2)
-        y = round(random.uniform(-6.5, 6.5), 2)
-        z = 0.20
+def generate_areas():
+    for index in range(num_planes):
+        while True:
+            x = round(random.uniform(-6.5, 6.5), 2)
+            y = round(random.uniform(-6.5, 6.5), 2)
+            z = 0.20
 
-        if not is_overlapping(x, y):
-            occupied_positions.append((x, y))
-            break
+            if not is_overlapping(x, y):
+                occupied_positions.append((x, y))
+                break
 
-    # Generate soil parameters
-    humidity = round(random.uniform(40.0, 70.0), 2)
-    pH = round(random.uniform(5.5, 8.0), 2)
-    microbiome = random.choice(microbiome_types)
-    temperature = round(random.uniform(15.0, 30.0), 2)
-    mineral_composition = "Silicon, Iron"
+        # Generate soil parameters
+        humidity = round(random.uniform(40.0, 70.0), 2)
+        pH = round(random.uniform(5.5, 8.0), 2)
+        microbiome = random.choice(microbiome_types)
+        temperature = round(random.uniform(15.0, 30.0), 2)
+        mineral_composition = "Silicon, Iron"
 
-    area = Area(x, y, z, humidity, pH, microbiome, temperature, mineral_composition)
-    areas.append(area)
+        area = Area(x, y, z, humidity, pH, microbiome, temperature, mineral_composition)
+        areas.append(area)
 
-    # Create plane in simulation
-    plane_handle = sim.createPrimitiveShape(sim.primitiveshape_plane, sizes, options)
-    sim.setObjectColor(plane_handle, 0, 0, [0.0, 1.0, 0.0])  # Green color
-    sim.setObjectPosition(plane_handle, sim.handle_world, [x, y, z])
-    sim.setObjectName(plane_handle, f"Field_{index}")
+        # Create plane in simulation
+        plane_handle = sim.createPrimitiveShape(sim.primitiveshape_plane, sizes, options)
+        sim.setObjectColor(plane_handle, 0, 0, [0.0, 1.0, 0.0])  # Green color
+        sim.setObjectPosition(plane_handle, sim.handle_world, [x, y, z])
+        sim.setObjectName(plane_handle, f"Field_{index}")
 
-    # Write soil data as custom data block
-    soil_data = {
-        "area": (area.x, area.y, area.z),
-        "humidity": humidity,
-        "pH": pH,
-        "microbiome": microbiome,
-        "temperature": temperature,
-        "minerals": mineral_composition
-    }
-    sim.writeCustomDataBlock(plane_handle, "SoilData", json.dumps(soil_data).encode('utf-8'))
+        # Write soil data as custom data block
+        soil_data = {
+            "area": (area.x, area.y, area.z),
+            "humidity": humidity,
+            "pH": pH,
+            "microbiome": microbiome,
+            "temperature": temperature,
+            "minerals": mineral_composition
+        }
+        sim.writeCustomDataBlock(plane_handle, "SoilData", json.dumps(soil_data).encode('utf-8'))
 
-# Print summary
-for area in areas:
-    print(area)
+    # Print summary
+    for area in areas:
+        print(area)
 
-print(f"Created {num_planes} non-overlapping planes with parameters.")
+    print(f"Created {num_planes} non-overlapping planes with parameters.")
+    return areas
