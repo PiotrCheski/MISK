@@ -1,6 +1,7 @@
 import time
 import threading
 import os
+from pathlib import Path
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 from Code.create_areas import generate_areas
 from Code.central import Centrala
@@ -10,9 +11,11 @@ def main():
     sim = client.require('sim')
 
     print("[Main] Loading Mars terrain scene...")
+    
     current_dir = os.path.dirname(os.path.abspath(__file__))
     scene_path = os.path.join(current_dir, "mars_terrain.ttt")
-    sim.loadScene(scene_path)
+    
+   # sim.loadScene(scene_path)
     print("[Main] Scene loaded.")
 
     print("[Main] Generating areas...")
