@@ -1,6 +1,10 @@
-map_size : [700.0, 700.0]
-step_size : 0.5
+map_size : [10.0, 10.0]
+step_size : 0.05
 max_ierations : 1000  
 generate_chance : 0.2
-search_radius : 2.0
-goal_radius : 0.5
+search_radius : 0.1
+goal_radius : 0.05
+
+# for visualization
+sizes : [0.02, 0.02, 0.02]
+height : 0.1

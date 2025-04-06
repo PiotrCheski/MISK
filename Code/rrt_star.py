@@ -2,6 +2,7 @@ import yaml
 import random
 import numpy as np
 import math
+import os
 
 """
 obstacle list -> [(x,y,r), (x1,y1,r1), (x2,y2,r2)], gdzie:
@@ -19,7 +20,8 @@ class Node:
 class RRTStar:
     def __init__(self, start, goal, obstacle_list):
         # wspólne parametry dla rrt*, będą stałe w symulacji, należy je dobrać do środowiska
-        with open("rrt_star_config.yaml", 'r') as file:
+        config_path = os.path.join(os.path.dirname(__file__), "rrt_star_config.yaml")
+        with open(config_path, 'r') as file:
             config = yaml.safe_load(file)
         self.map_size_ = config['map_size']
         self.step_size_ = config['step_size']
@@ -37,7 +39,7 @@ class RRTStar:
 
     def generate_node(self):
         # wylosuj node w przestrzeni (szansa na wylosowanie celu)
-        if random.randint() > self.generate_chance_:
+        if random.randint(0, 1) > self.generate_chance_:
             new_node = Node(random.uniform(0, self.map_size_[0]), random.uniform(0, self.map_size_[1]))
         else:
             new_node = self.goal_
@@ -65,7 +67,7 @@ class RRTStar:
         # sprawdź czy nie ma kolizji z przeszkodami
         for obstacle in self.obstacles_:
             distance = np.linalg.norm([node.x_ - obstacle[0], node.y_ - obstacle[1]])
-            if distance <= 2*obstacle[2]:
+            if distance <= obstacle[2]:
                 return True
         return False
 
@@ -114,7 +116,7 @@ class RRTStar:
         current_node = node
         while current_node is not None:
             path.append([current_node.x_, current_node.y_])
-            current_node = node
+            current_node = current_node.parent_
         reversed_path = path[::-1]
         return reversed_path
     
@@ -131,7 +133,7 @@ class RRTStar:
                 neighbors = self.find_neighbors(new_node)
                 new_node = self.choose_parent(neighbors, nearest_node, new_node)
                 self.node_list_.append(new_node)
-                self.rewire(new_node, neighbors)
+                self.rewire(neighbors, new_node)
 
             # jeśli jest w okolicy celu to zwróć ścieżkę
             if self.check_goal(new_node):
