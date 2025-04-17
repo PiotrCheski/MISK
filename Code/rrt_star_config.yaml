@@ -1,4 +1,6 @@
-map_size : [10.0, 10.0]
+# for planner logic
+map_size_ub : [10.0, 10.0]
+map_size_lb : [-10.0, -10.0]
 step_size : 0.05
 max_ierations : 1000  
 generate_chance : 0.2
