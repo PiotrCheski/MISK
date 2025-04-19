@@ -12,6 +12,7 @@ def main():
     sim = client.require('sim')
 
     print("[Main] Starting simulation...")
+    sim.setStepping(True) # in discrete mode, not countinous time (cameras will not work with api)
     sim.startSimulation() 
 
     print("[Main] Calculating path...")
@@ -39,7 +40,7 @@ def main():
 
     try:
         while True:
-            time.sleep(1)
+            sim.step()  # triggers next simulation step (by defalt step is 0.05 seconds)
     except KeyboardInterrupt:
         print("[Main] Stopping...")
         sim.stopSimulation()
