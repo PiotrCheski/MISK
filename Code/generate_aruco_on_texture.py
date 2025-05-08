@@ -37,12 +37,21 @@ marker_resized = cv2.resize(marker_img, (100, 100))
 # Konwertuj marker na obraz kolorowy (dodaj 3 kanały RGB)
 marker_colored = cv2.cvtColor(marker_resized, cv2.COLOR_GRAY2BGR)
 
-# Oblicz środek tekstury
-y_offset = (texture.shape[0] - marker_colored.shape[0]) // 2
-x_offset = (texture.shape[1] - marker_colored.shape[1]) // 2
+# Oblicz lewy dolny róg tekstury
+# Margines od krawędzi (np. 50 px od dołu i od lewej)
+margin = 75
 
-# Nałóż marker na środek tekstury
-texture[y_offset:y_offset + marker_colored.shape[0], x_offset:x_offset + marker_colored.shape[1]] = marker_colored
+x_offset = margin
+y_offset = texture.shape[0] - marker_colored.shape[0] - margin
+
+# Upewnij się, że marker zmieści się w teksturze
+if y_offset < 0 or x_offset + marker_colored.shape[1] > texture.shape[1]:
+    raise ValueError("Marker nie mieści się w teksturze po przesunięciu.")
+
+# Nałóż marker z przesunięciem od dolnego lewego rogu
+texture[y_offset:y_offset + marker_colored.shape[0],
+        x_offset:x_offset + marker_colored.shape[1]] = marker_colored
+
 
 # Zapisz nową teksturę z markerem ArUco
 output_texture_path = os.path.join(current_dir, "..", "Textures", "dirt_with_aruco.jpg")
