@@ -34,7 +34,7 @@ def main():
     #rover move
     print("[Main] Moving rover!")
     for point in my_planer.path_:
-        move_rover_to_goal(point, goal)
+        move_rover_to_goal(point)
     time.sleep(1)
     # remove points
     print("[Main] Now removing!")
