@@ -14,16 +14,17 @@ def main():
 
     print("[Main] Starting simulation...")
     sim.setStepping(True) # in discrete mode, not countinous time (cameras will not work with api)
-    sim.startSimulation() 
+    #sim.startSimulation() 
 
     print("[Main] Calculating path...")
-    start = [-6.1, 6.1]
+    rover_handle = sim.getObject('/Chassis')
+    start = sim.getObjectPosition(rover_handle, -1)
     goal = [0.1, -2.1]
     obstacles = [[-1.1, 0.1, 1.0], [-2.1, 2.1, 0.5] ]
     my_planer = RRTStar(start, goal, obstacles)
     my_planer.plan()
-    print(my_planer.path_)
-
+    for i in my_planer.path_:
+        move_rover_to_goal(i, goal)
     print("[Main] Displaying path...")
     #getting handles so we can remove them later
     sh = visualise_point(sim, start, 0)
@@ -33,10 +34,10 @@ def main():
     print("[Main] All visualised!")
     time.sleep(2)
     print("[Main] Now removing!")
-    remove_point(sim, sh)
-    remove_point(sim, gh)
-    remove_obstacles(sim, oh)
-    remove_path(sim, ph, lh)
+    #remove_point(sim, sh)
+    #remove_point(sim, gh)
+    #remove_obstacles(sim, oh)
+    #remove_path(sim, ph, lh)
     #print("[Main] All clear!")
 
     try:
