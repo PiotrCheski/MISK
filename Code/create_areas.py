@@ -3,13 +3,22 @@ import os
 import json
 import cv2
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
-from Code.area import Area
+
+from new_aruco import generate_aruco_textures
+from area import Area
 
 client = RemoteAPIClient()
 sim = client.require('sim')
 
 # ToDo: dodać teksturę do pól
 # ToDo: dodać markery na środku każdego pola
+
+# Ścieżka do katalogu bieżącego skryptu
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Ścieżka do tekstury (plik dirt.jpg znajduje się w folderze nadrzędnym względem folderu, w którym jest skrypt)
+texture_path = os.path.join(current_dir, "..", "Textures", "dirt.jpg")
+textures_dir = os.path.join(current_dir, "..", "Textures")
 
 sizes = [1.0, 1.0, 0.1]
 options = 0
@@ -20,14 +29,13 @@ microbiome_types = ["Bacteria", "Fungi", "Algae", "Archaea"]
 areas = []
 
 # Load texture
-current_dir = os.path.dirname(os.path.abspath(__file__))
 texture_path = os.path.join(current_dir, "..", "Textures", "dirt_with_aruco.jpg")
 texture_handle, texture_id, res = sim.createTexture(texture_path, 0)
 
-# Save the new texture with the marker overlayed
-def save_new_texture_with_marker(texture, output_path="Textures/texture_with_marker.jpg"):
-    cv2.imwrite(output_path, texture)
-    return output_path
+## Save the new texture with the marker overlayed
+#def save_new_texture_with_marker(texture, output_path="Textures/texture_with_marker.jpg"):
+#    cv2.imwrite(output_path, texture)
+#    return output_path
 
 def is_overlapping(x, y):
     for px, py in occupied_positions:
@@ -38,7 +46,9 @@ def is_overlapping(x, y):
 def generate_areas():
     grid_rows = 5
     grid_cols = 5
-    spacing = 2.0  # Odległość między środkami pól
+    amount_of_areas = grid_rows * grid_cols - 1 # na środku jest centrala
+    generate_aruco_textures(texture_path, textures_dir, amount_of_areas)
+    spacing = 2.0
     start_x = -((grid_cols - 1) * spacing) / 2
     start_y = -((grid_rows - 1) * spacing) / 2
     index = 0
@@ -66,6 +76,9 @@ def generate_areas():
             plane_handle = sim.createPrimitiveShape(sim.primitiveshape_plane, sizes, options)
             sim.setObjectPosition(plane_handle, sim.handle_world, [x, y, z])
             sim.setObjectName(plane_handle, f"Field_{index}")
+            texture_path_local = os.path.join(current_dir, "..", "Textures", f"dirt_with_aruco_{index}.jpg")
+            print(texture_path_local)
+            texture_handle, texture_id, res = sim.createTexture(texture_path_local, 0)
             sim.setShapeTexture(plane_handle, texture_id, sim.texturemap_plane, 1, [1.5,1.5])
 
             soil_data = {

@@ -11,7 +11,7 @@ class Centrala:
         self.fields = []
         self.running = True
         self.centrala_handle = None
-        self._create_centrala_cube()
+        #self._create_centrala_cube()
         self._load_fields_from_scene()
 
     def _create_centrala_cube(self):

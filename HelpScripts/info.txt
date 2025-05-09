@@ -1,0 +1,1 @@
+Folder na skrypty pomocnicze do np. usuwania elementów. Pomagają przy debuggowaniu

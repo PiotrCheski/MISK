@@ -10,18 +10,19 @@ def main():
     client = RemoteAPIClient()
     sim = client.require('sim')
 
-    print("[Main] Loading Mars terrain scene...")
-    
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    scene_path = os.path.join(current_dir, "mars_terrain.ttt")
-    
-   # sim.loadScene(scene_path)
-    print("[Main] Scene loaded.")
+    #print("[Main] Loading Mars terrain scene...")
+    #
+    #current_dir = os.path.dirname(os.path.abspath(__file__))
+    #scene_path = os.path.join(current_dir, "mars_terrain.ttt")
+    #
+   ## sim.loadScene(scene_path)
+    #print("[Main] Scene loaded.")
+#
+    #print("[Main] Generating areas...")
+    #generate_areas()  # This will create fields
+#
+    #print("[Main] Starting simulation...")
 
-    print("[Main] Generating areas...")
-    generate_areas()  # This will create fields
-
-    print("[Main] Starting simulation...")
     sim.setStepping(True) # in discrete mode, not countinous time (cameras will not work with api)
     sim.startSimulation()
 
