@@ -1,10 +1,9 @@
 import random
 import os
 import json
-import cv2
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 
-from new_aruco import generate_aruco_textures
+from generate_aruco import generate_aruco_textures
 from area import Area
 
 client = RemoteAPIClient()

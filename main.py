@@ -3,7 +3,6 @@ import threading
 import os
 from pathlib import Path
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
-from Code.create_areas import generate_areas
 from Code.central import Centrala
 
 def main():
