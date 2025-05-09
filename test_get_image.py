@@ -28,10 +28,10 @@ def main():
         # (consistent with the axes of vision sensors, pointing Z outwards, Y up)
         # and color format is RGB triplets, whereas OpenCV uses BGR:
         img = cv2.flip(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), 0)
-        new_img = locate_marker(img)
+        new_img, markers = locate_marker(img)
 
-        cv2.imshow('', new_img)
-        cv2.waitKey(1) # waits for click
+        #cv2.imshow('', new_img)
+        #cv2.waitKey(1) # waits for click
         sim.step()  # triggers next simulation step
 
     print("[Main] Stopping...")

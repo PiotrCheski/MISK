@@ -23,8 +23,7 @@ def main():
     obstacles = [[-1.1, 0.1, 1.0], [-2.1, 2.1, 0.5] ]
     my_planer = RRTStar(start, goal, obstacles)
     my_planer.plan()
-    for i in my_planer.path_:
-        move_rover_to_goal(i, goal)
+    print(my_planer.path_)
     print("[Main] Displaying path...")
     #getting handles so we can remove them later
     sh = visualise_point(sim, start, 0)
@@ -32,13 +31,18 @@ def main():
     oh = visualise_obstacles(sim, obstacles, 2)
     ph, lh = visualise_path(sim, my_planer.path_, 0)
     print("[Main] All visualised!")
-    time.sleep(2)
+    #rover move
+    print("[Main] Moving rover!")
+    for point in my_planer.path_:
+        move_rover_to_goal(point, goal)
+    time.sleep(1)
+    # remove points
     print("[Main] Now removing!")
-    #remove_point(sim, sh)
-    #remove_point(sim, gh)
-    #remove_obstacles(sim, oh)
-    #remove_path(sim, ph, lh)
-    #print("[Main] All clear!")
+    remove_point(sim, sh)
+    remove_point(sim, gh)
+    remove_obstacles(sim, oh)
+    remove_path(sim, ph, lh)
+    print("[Main] All clear!")
 
     try:
         while True:
