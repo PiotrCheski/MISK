@@ -19,7 +19,7 @@ def main():
     print("[Main] Calculating path...")
     rover_handle = sim.getObject('/Chassis')
     start = sim.getObjectPosition(rover_handle, -1)
-    goal = [-4.0, 4.0]
+    goal = [-2.0, -2.0]
     obstacles = [[-1.1, 0.1, 1.0], [-2.1, 2.1, 0.5] ]
     my_planer = RRTStar(start, goal, obstacles)
     my_planer.plan()
