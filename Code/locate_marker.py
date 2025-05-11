@@ -12,20 +12,12 @@ class MarkerDetector:
         self.rover_handle_ = rover_handle
         # camera params
         self.camera_matrix_, self.distortion_coeffs_ = self.get_camera_parameters(self, self.vision_sensor_handle)
-        # calclate constant transformation matrix rover->camera
-        m = self.sim_.getObjectMatrix(self.rover_handle_, -1)
-        t_rover_map = np.array([
+        # constant transformation matrix (from rover design) rover->camera
+        self.t_camera_rover_ = np.array([
         [m[0], m[4], m[8], m[3]],
         [m[1], m[5], m[9], m[7]],
         [m[2], m[6], m[10], m[11]],
         [0,    0,    0,    1]])
-        m = self.sim_.getObjectMatrix(self.vision_sensor_handle_, -1)
-        t_camera_map = np.array([
-        [m[0], m[4], m[8], m[3]],
-        [m[1], m[5], m[9], m[7]],
-        [m[2], m[6], m[10], m[11]],
-        [0,    0,    0,    1]])
-        self.t_camera_rover_ = t_rover_map * t_camera_map^(-1)
 
     def get_camera_parameters(self, vision_sensor_handle):
         # Get sensor resolition
@@ -106,9 +98,17 @@ class MarkerDetector:
         [m[1], m[5], m[9], m[7]],
         [m[2], m[6], m[10], m[11]],
         [0,    0,    0,    1]])
-
         # Calculate translation of marker im map frame
-        t_maker_map = t_rover_map * self.t_camera_rover_ * t_marker_camera
+        t_maker_map = t_marker_camera * self.t_camera_rover_ * t_rover_map
+
+        # sneaky simplification to check if equations are good
+        #m = self.sim_.getObjectMatrix(self.vision_sensor_handle_, -1)
+        #t_camera_map = np.array([
+        #[m[0], m[4], m[8], m[3]],
+        #[m[1], m[5], m[9], m[7]],
+        #[m[2], m[6], m[10], m[11]],
+        #[0,    0,    0,    1]])
+        #t_maker_map = t_marker_camera * t_camera_map
 
         # Convert to position and orientation
         marker_position = t_maker_map[:3, 3]
