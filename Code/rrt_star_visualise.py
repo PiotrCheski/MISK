@@ -1,15 +1,14 @@
 import yaml
 import os
 
-# load global params
-config_path = os.path.join(os.path.dirname(__file__), "rrt_star_config.yaml")
-with open(config_path, 'r') as file:
-    config = yaml.safe_load(file)
-sizes = config['sizes']
-height = config['height']
-
 # visualise single point
 def visualise_point(sim, point, index, color=[0,0,1]):
+    # load global params
+    config_path = os.path.join(os.path.dirname(__file__), "rrt_star_config.yaml")
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+    sizes = config['sizes']
+    height = config['height']
     # visualize points as spheres
     options = 0
     point_handle = sim.createPrimitiveShape(sim.primitiveshape_spheroid, sizes, options)
@@ -23,6 +22,12 @@ def visualise_point(sim, point, index, color=[0,0,1]):
 
 # visualise obstacle list as discs
 def visualise_obstacles(sim, points, index, color=[1,0,0]):
+    # load global params
+    config_path = os.path.join(os.path.dirname(__file__), "rrt_star_config.yaml")
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+    sizes = config['sizes']
+    height = config['height']
     # visualize points as spheres
     options = 0
     obstacle_handles = []
@@ -41,6 +46,12 @@ def visualise_obstacles(sim, points, index, color=[1,0,0]):
 
 # visualise path as points connedted with line
 def visualise_path(sim, path, index, color= [0.0,1.0,0.0]):
+    # load global params
+    config_path = os.path.join(os.path.dirname(__file__), "rrt_star_config.yaml")
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+    sizes = config['sizes']
+    height = config['height']
     options = 0
     points_handles = []
     # visualize points as spheres

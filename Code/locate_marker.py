@@ -11,20 +11,20 @@ class MarkerDetector:
         self.vision_sensor_handle_ = vision_sensor_handle
         self.rover_handle_ = rover_handle
         # camera params
-        self.camera_matrix_, self.distortion_coeffs_ = self.get_camera_parameters(self, self.vision_sensor_handle)
+        self.camera_matrix_, self.distortion_coeffs_ = self.get_camera_parameters()
         # constant transformation matrix (from rover design) rover->camera
         self.t_camera_rover_ = np.array([
-        [m[0], m[4], m[8], m[3]],
-        [m[1], m[5], m[9], m[7]],
-        [m[2], m[6], m[10], m[11]],
+        [0, -1, 0, 0.45066],
+        [-0.819152, 0, 0.573576, 0.03496],
+        [-0.573576, 0, -0.819152, 0.329],
         [0,    0,    0,    1]])
 
-    def get_camera_parameters(self, vision_sensor_handle):
+    def get_camera_parameters(self):
         # Get sensor resolition
-        resolution = self.sim_.getVisionSensorResolution(vision_sensor_handle)
+        resolution = self.sim_.getVisionSensorResolution(self.vision_sensor_handle_)
         width, height = resolution[0], resolution[1]
         # Get sensor field of view (radians)
-        fov_y = self.sim_.getVisionSensorFov(vision_sensor_handle)
+        fov_y = self.sim_.getObjectFloatParam(self.vision_sensor_handle_, self.sim_.visionfloatparam_perspective_angle)
         # Square pixels, so fx = fy
         fy = height / (2 * np.tan(fov_y / 2))
         fx = fy
@@ -37,6 +37,8 @@ class MarkerDetector:
             [ 0, fy, cy],
             [ 0,  0,  1]
         ], dtype=np.float32)
+        # ideal camera?
+        #camera_matrix = np.array([[1000, 0, 320], [0, 1000, 240], [0, 0, 1]], dtype=np.float32)
         # No optical distortion
         distortion_coeffs = np.zeros((4, 1), dtype=np.float32)
         return camera_matrix, distortion_coeffs
@@ -47,7 +49,7 @@ class MarkerDetector:
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         aruco_params = cv2.aruco.DetectorParameters()
         # Marker size and corner points
-        marker_length = 0.05 
+        marker_length = 0.3
         half_length = marker_length / 2
         corner_points = np.array([
                 [-half_length,  half_length, 0],
@@ -77,7 +79,7 @@ class MarkerDetector:
                     # marker_data = {"id": ids[i][0],"rotation_vector ": rvec, "translation_vector ": tvec, "rotation_matrix": rotm}
                     marker_data = [ids[i][0], rvec, tvec, rotm]
                     markers.append(marker_data)
-                    print(f"ID: {ids[i][0]}, Pozycja: X={tvec[0][0]:.2f}m, Y={tvec[1][0]:.2f}m, Z={tvec[2][0]:.2f}m")
+                    print(f"ID: {ids[i][0]}, Marker: X={tvec[0][0]:.2f}m, Y={tvec[1][0]:.2f}m, Z={tvec[2][0]:.2f}m, R={rvec[0][0]}, P={rvec[1][0]}, Y={rvec[2][0]}")
         # Return image with markers
         if show == True:
             cv2.imshow('', img)
@@ -99,16 +101,18 @@ class MarkerDetector:
         [m[2], m[6], m[10], m[11]],
         [0,    0,    0,    1]])
         # Calculate translation of marker im map frame
-        t_maker_map = t_marker_camera * self.t_camera_rover_ * t_rover_map
+        # t_maker_map = t_rover_map * self.t_camera_rover_* t_marker_camera
+        #t_camera_map = np.dot(t_rover_map, self.t_camera_rover_)
+        #t_maker_map = np.dot(t_camera_map, t_marker_camera)
 
-        # sneaky simplification to check if equations are good
-        #m = self.sim_.getObjectMatrix(self.vision_sensor_handle_, -1)
-        #t_camera_map = np.array([
-        #[m[0], m[4], m[8], m[3]],
-        #[m[1], m[5], m[9], m[7]],
-        #[m[2], m[6], m[10], m[11]],
-        #[0,    0,    0,    1]])
-        #t_maker_map = t_marker_camera * t_camera_map
+        n = self.sim_.getObjectMatrix(self.vision_sensor_handle_, -1)
+        t_test = np.array([
+        [n[0], n[4], n[8], n[3]],
+        [n[1], n[5], n[9], n[7]],
+        [n[2], n[6], n[10], n[11]],
+        [0,    0,    0,    1]])
+        #t_maker_map = t_marker_camera @ t_test
+        t_maker_map = np.dot(t_marker_camera,t_test)
 
         # Convert to position and orientation
         marker_position = t_maker_map[:3, 3]
@@ -117,6 +121,30 @@ class MarkerDetector:
         marker_orientation = rot.as_euler('xyz', degrees=True)
         
         return marker_position, marker_orientation
+    
+    def get_camera_location(self):
+        # Create rover map transformation matrix
+        m = self.sim_.getObjectMatrix(self.rover_handle_, -1)
+        t_rover_map = np.array([
+        [m[0], m[4], m[8], m[3]],
+        [m[1], m[5], m[9], m[7]],
+        [m[2], m[6], m[10], m[11]],
+        [0,    0,    0,    1]])
+        #print(self.t_camera_rover_)
+        #print(t_rover_map)
+        t_camera_map = np.dot(t_rover_map, self.t_camera_rover_)
+        #print(t_camera_map)
+        n = self.sim_.getObjectMatrix(self.vision_sensor_handle_, -1)
+        t_test = np.array([
+        [n[0], n[4], n[8], n[3]],
+        [n[1], n[5], n[9], n[7]],
+        [n[2], n[6], n[10], n[11]],
+        [0,    0,    0,    1]])
+        #print(t_test)
+
+        return t_camera_map, t_test
+
+    
 
 
 

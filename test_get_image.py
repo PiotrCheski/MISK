@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from Code.locate_marker import MarkerDetector
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
+from Code.rrt_star_visualise import visualise_point
 
 """
 Testowanie detekcji i lokalizaji markerów aruco
@@ -17,23 +18,42 @@ def main():
     # image needs to be from vision sensor (camera image is not processable by api)
     vision_sensor_handle = sim.getObject('/visionSensor')
     rover_handle = sim.getObject('/Chassis')
-    MarkerDetector = MarkerDetector(sim, vision_sensor_handle, rover_handle)
+    markerdetector = MarkerDetector(sim, vision_sensor_handle, rover_handle)
+    sim.step()
+    matrix, diff = markerdetector.get_camera_location()
+    # get image
+    img, [resX, resY] = sim.getVisionSensorImg(vision_sensor_handle)
+    img = np.frombuffer(img, dtype=np.uint8).reshape(resY, resX, 3)
+    img = cv2.flip(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), 0)
+    # find markers
+    new_img, markers = markerdetector.locate_marker(img, True)
+    # there are markers then locate then
+    if markers:
+        for marker in markers:
+            tvec = marker[2]
+            rotm = marker[3]
+            marker_position, marker_orientation = markerdetector.calculate_marker_location(tvec, rotm)
+            print(f"Found marker! \n at:{marker_position[0]},{marker_position[1]},{marker_position[2]}  \n with orientation:{marker_orientation[0]},{marker_orientation[1]},{marker_orientation[2]}")
+            #sh = visualise_point(sim, marker_position, 0)
+    #print("[Main] Continuing...")
 
     try:
         while True:
             # get image
-            img, [resX, resY] = sim.getVisionSensorImg(vision_sensor_handle)
-            img = np.frombuffer(img, dtype=np.uint8).reshape(resY, resX, 3)
-            img = cv2.flip(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), 0)
+            #img, [resX, resY] = sim.getVisionSensorImg(vision_sensor_handle)
+            #img = np.frombuffer(img, dtype=np.uint8).reshape(resY, resX, 3)
+            #img = cv2.flip(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), 0)
             # find markers
-            new_img, markers = MarkerDetector.locate_marker(img)
+            #new_img, markers = markerdetector.locate_marker(img, False)
             # there are markers then locate then
-            if markers:
-                for marker in markers:
-                    tvec = marker[2]
-                    rotm = marker[3]
-                    marker_position, marker_orientation = MarkerDetector.calculate_marker_location(tvec, rotm)
-                    print(f"Found marker! \n at:{marker_position[0]},{marker_position[1]},{marker_position[2]}  \n with orientation:{marker_orientation[0]},{marker_orientation[1]},{marker_orientation[2]}")
+            #if markers:
+            #    for marker in markers:
+            #        tvec = marker[2]
+            #        rotm = marker[3]
+            #        marker_position, marker_orientation = markerdetector.calculate_marker_location(tvec, rotm)
+            #        print(f"Found marker! \n at:{marker_position[0]},{marker_position[1]},{marker_position[2]}  \n with orientation:{marker_orientation[0]},{marker_orientation[1]},{marker_orientation[2]}")
+                    #sh = visualise_point(sim, marker_position, 0)
+            #print("[Main] Continuing...")
             sim.step()
 
     except KeyboardInterrupt:
