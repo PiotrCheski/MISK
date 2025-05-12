@@ -9,4 +9,4 @@ goal_radius : 0.05  # odległość w której uznaje że dotarł do celu
 
 # for visualization
 sizes : [0.02, 0.02, 0.02]
-height : 0.5
+height : 0.1
