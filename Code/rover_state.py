@@ -58,7 +58,7 @@ class Battery:
     def is_full(self):
         return self._charge == Battery.MAX_CAPACITY
 
-    def tick(self, activity_state: ActivityState, has_charging_conditions: bool):
+    def tick(self, id, activity_state: ActivityState, has_charging_conditions: bool):
         prev_charge = self._charge
         if activity_state == ActivityState.CHARGING and not has_charging_conditions:
             pass
@@ -67,7 +67,7 @@ class Battery:
 
         self._clamp_charge()
         logging.info(
-            f"Battery tick -- state: {activity_state.value}, can_charge: {has_charging_conditions} | {prev_charge} -> {self._charge}"
+            f"[{id}] Battery tick -- state: {activity_state.value}, can_charge: {has_charging_conditions} | {prev_charge} -> {self._charge}"
         )
 
 
@@ -101,10 +101,6 @@ class RoverState:
     def is_charging(self):
         return self._activity_state == ActivityState.CHARGING
 
-    def set_panel_state(self, panel_state: PanelState):
-        self._panel_state = panel_state
-        return self
-
     def set_weather_state(self, weather_state: WeatherState):
         self._weather_state = weather_state
         return self
@@ -112,7 +108,7 @@ class RoverState:
     def set_activity_state(self, activity_state: ActivityState):
         if self._activity_state == ActivityState.CHARGING:
             logging.warning(
-                f"Cannot change activity when rover is in '{ActivityState.CHARGING}' state."
+                f"[{self._id}] Cannot change activity when rover is in '{ActivityState.CHARGING}' state."
             )
             return self
 
@@ -120,20 +116,23 @@ class RoverState:
         return self
 
     def __maybe_update_state(self):
+        id = self._id
         if self._battery.is_empty() and self._activity_state != ActivityState.CHARGING:
             logging.info(
-                f"Battery has run out; setting state to '{ActivityState.CHARGING}' and deploying solar panels."
+                f"[{id}] Battery has run out; setting state to '{ActivityState.CHARGING}' and deploying solar panels."
             )
             self._activity_state = ActivityState.CHARGING
-            deploy_solar_panels(self._id)
+            deploy_solar_panels(id)
+            self._panel_state = PanelState.EXTENDED
             return self
 
         if self._battery.is_full() and self._activity_state == ActivityState.CHARGING:
             logging.info(
-                f"Battery recharged; removing the '{ActivityState.CHARGING}' state and retracting solar panels."
+                f"[{id}] Battery recharged; removing the '{ActivityState.CHARGING}' state and retracting solar panels."
             )
             self._activity_state = ActivityState.IDLE
-            retract_solar_panels(self._id)
+            retract_solar_panels(id)
+            self._panel_state = PanelState.HIDDEN
             return self
 
     def __update_cb(self):
@@ -143,7 +142,7 @@ class RoverState:
 
     def __update(self):
         self.__maybe_update_state()
-        self._battery.tick(self._activity_state, self.has_charging_conditions())
+        self._battery.tick(self._id, self._activity_state, self.has_charging_conditions())
 
 
 if __name__ == "__main__":
@@ -155,8 +154,4 @@ if __name__ == "__main__":
 
     sim.startSimulation()
 
-    rover_state = (
-        RoverState("Chassis")
-        .set_activity_state(ActivityState.MOVING)
-        .set_panel_state(PanelState.EXTENDED)
-    )
+    rover_state = RoverState("Chassis").set_activity_state(ActivityState.MOVING)
