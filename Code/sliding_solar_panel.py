@@ -5,9 +5,6 @@ import time
 client = RemoteAPIClient()
 sim = client.require('sim')
 
-import time
-from coppeliasim_zmqremoteapi_client import RemoteAPIClient
-
 def deploy_solar_panels(rover_name: str, extension: float = 0.25, duration: float = 2.0):
     """
     Wysuwa jednocześnie lewy i prawy panel słoneczny z łazika w CoppeliaSim.
@@ -111,7 +108,8 @@ def retract_solar_panels(rover_name: str, extension: float = 0.25, duration: flo
         time.sleep(0.01)
 
 
-sim.startSimulation()
-deploy_solar_panels('Chassis')  # wysuwa oba panele jednocześnie
-time.sleep(5)
-retract_solar_panels('Chassis')  # wysuwa oba panele jednocześnie
+if __name__ == '__main__':
+  sim.startSimulation()
+  deploy_solar_panels('Chassis')  # wysuwa oba panele jednocześnie
+  time.sleep(5)
+  retract_solar_panels('Chassis')  # wysuwa oba panele jednocześnie

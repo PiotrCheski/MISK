@@ -2,16 +2,18 @@ from enum import Enum
 import logging
 import threading
 
+from sliding_solar_panel import deploy_solar_panels, retract_solar_panels, sim
 
-def singleton(cls):
+
+def multiton(cls):
     instances = {}
 
-    def get_instance(*args, **kwargs):
-        if cls not in instances:
-            instances[cls] = cls(*args, **kwargs)
-        return instances[cls]
+    def getinstance(id):
+        if id not in instances:
+            instances[id] = cls(id)
+        return instances[id]
 
-    return get_instance
+    return getinstance
 
 
 class PanelState(Enum):
@@ -46,7 +48,9 @@ class Battery:
         self._charge = 100
 
     def _clamp_charge(self):
-        self._charge = max(Battery.MIN_CAPACITY, min(self._charge, Battery.MAX_CAPACITY))
+        self._charge = max(
+            Battery.MIN_CAPACITY, min(self._charge, Battery.MAX_CAPACITY)
+        )
 
     def is_empty(self):
         return self._charge == Battery.MIN_CAPACITY
@@ -67,11 +71,13 @@ class Battery:
         )
 
 
-@singleton
+@multiton
 class RoverState:
     UPDATE_INTERVAL_SECS = 1
 
-    def __init__(self):
+    def __init__(self, id):
+        # The id should match the parameters passed to solar panel functions
+        self._id = id
         # Default states
         self._panel_state = PanelState.HIDDEN
         self._weather_state = WeatherState.SUNNY
@@ -87,10 +93,13 @@ class RoverState:
         return self._battery
 
     def has_charging_conditions(self):
-        return self._weather_state == WeatherState.SUNNY and self._panel_state == PanelState.EXTENDED
+        return (
+            self._weather_state == WeatherState.SUNNY
+            and self._panel_state == PanelState.EXTENDED
+        )
 
     def is_charging(self):
-        return self._activity_state == ActivityState.CHARGING;
+        return self._activity_state == ActivityState.CHARGING
 
     def set_panel_state(self, panel_state: PanelState):
         self._panel_state = panel_state
@@ -113,16 +122,18 @@ class RoverState:
     def __maybe_update_state(self):
         if self._battery.is_empty() and self._activity_state != ActivityState.CHARGING:
             logging.info(
-                f"Battery has run out; setting state to '{ActivityState.CHARGING}'."
+                f"Battery has run out; setting state to '{ActivityState.CHARGING}' and deploying solar panels."
             )
             self._activity_state = ActivityState.CHARGING
+            deploy_solar_panels(self._id)
             return self
 
         if self._battery.is_full() and self._activity_state == ActivityState.CHARGING:
             logging.info(
-                f"Battery recharged; removing the '{ActivityState.CHARGING}' state."
+                f"Battery recharged; removing the '{ActivityState.CHARGING}' state and retracting solar panels."
             )
             self._activity_state = ActivityState.IDLE
+            retract_solar_panels(self._id)
             return self
 
     def __update_cb(self):
@@ -142,4 +153,10 @@ if __name__ == "__main__":
         datefmt="%H:%M:%S",
     )
 
-    rover_state = RoverState().set_activity_state(ActivityState.MOVING).set_panel_state(PanelState.EXTENDED)
+    sim.startSimulation()
+
+    rover_state = (
+        RoverState("Chassis")
+        .set_activity_state(ActivityState.MOVING)
+        .set_panel_state(PanelState.EXTENDED)
+    )
