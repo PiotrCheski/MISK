@@ -93,6 +93,7 @@ def retract_arm(rover_name):
     rotate_y(joint_handle('ArmJoint2'), -90)
 
 if __name__ == "__main__":
+    sim.startSimulation()
     rover_name = "Chassis"
     deploy_arm(rover_name)
     grip(0.5)
