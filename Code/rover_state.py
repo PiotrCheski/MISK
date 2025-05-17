@@ -3,6 +3,7 @@ import logging
 import threading
 
 from sliding_solar_panel import deploy_solar_panels, retract_solar_panels, sim
+from day_night_cycle import DayNightCycle
 
 
 def multiton(cls):
@@ -19,11 +20,6 @@ def multiton(cls):
 class PanelState(Enum):
     HIDDEN = 0
     EXTENDED = 1
-
-
-class WeatherState(Enum):
-    SUNNY = 0
-    DARK = 1
 
 
 class ActivityState(Enum):
@@ -80,7 +76,6 @@ class RoverState:
         self._id = id
         # Default states
         self._panel_state = PanelState.HIDDEN
-        self._weather_state = WeatherState.SUNNY
         self._activity_state = ActivityState.IDLE
         # Battery
         self._battery = Battery()
@@ -93,17 +88,10 @@ class RoverState:
         return self._battery
 
     def has_charging_conditions(self):
-        return (
-            self._weather_state == WeatherState.SUNNY
-            and self._panel_state == PanelState.EXTENDED
-        )
+        return DayNightCycle().is_day() and self._panel_state == PanelState.EXTENDED
 
     def is_charging(self):
         return self._activity_state == ActivityState.CHARGING
-
-    def set_weather_state(self, weather_state: WeatherState):
-        self._weather_state = weather_state
-        return self
 
     def set_activity_state(self, activity_state: ActivityState):
         if self._activity_state == ActivityState.CHARGING:
@@ -118,6 +106,10 @@ class RoverState:
     def __maybe_update_state(self):
         id = self._id
         if self._battery.is_empty() and self._activity_state != ActivityState.CHARGING:
+            if not DayNightCycle().is_day():
+                self._activity_state = ActivityState.IDLE
+                return self
+
             logging.info(
                 f"[{id}] Battery has run out; setting state to '{ActivityState.CHARGING}' and deploying solar panels."
             )
@@ -126,14 +118,24 @@ class RoverState:
             self._panel_state = PanelState.EXTENDED
             return self
 
-        if self._battery.is_full() and self._activity_state == ActivityState.CHARGING:
-            logging.info(
-                f"[{id}] Battery recharged; removing the '{ActivityState.CHARGING}' state and retracting solar panels."
-            )
+        if self._activity_state == ActivityState.CHARGING:
+            if self._battery.is_full():
+                logging.info(
+                    f"[{id}] Battery recharged; removing the '{ActivityState.CHARGING}' state and retracting solar panels."
+                )
+            elif not DayNightCycle().is_day():
+                logging.info(
+                    f"[{id}] The sun is gone; removing the '{ActivityState.CHARGING}' state and retracting solar panels."
+                )
+            else:
+                return self
+
             self._activity_state = ActivityState.IDLE
             retract_solar_panels(id)
             self._panel_state = PanelState.HIDDEN
             return self
+
+        return self
 
     def __update_cb(self):
         while not self._update_thread_stop_event.is_set():
@@ -142,7 +144,9 @@ class RoverState:
 
     def __update(self):
         self.__maybe_update_state()
-        self._battery.tick(self._id, self._activity_state, self.has_charging_conditions())
+        self._battery.tick(
+            self._id, self._activity_state, self.has_charging_conditions()
+        )
 
 
 if __name__ == "__main__":
