@@ -4,6 +4,7 @@ import threading
 
 from sliding_solar_panel import deploy_solar_panels, retract_solar_panels, sim
 from day_night_cycle import DayNightCycle
+from move_arm import deploy_arm, retract_arm
 
 
 def multiton(cls):
@@ -94,11 +95,22 @@ class RoverState:
         return self._activity_state == ActivityState.CHARGING
 
     def set_activity_state(self, activity_state: ActivityState):
-        if self._activity_state == ActivityState.CHARGING:
-            logging.warning(
-                f"[{self._id}] Cannot change activity when rover is in '{ActivityState.CHARGING}' state."
-            )
-            return self
+        id = self._id
+        prev_state = self._activity_state
+        state_changed_to = lambda state: prev_state != state and activity_state == state
+        state_changed_from = lambda state: prev_state == state and activity_state != state
+
+        if state_changed_to(ActivityState.CHARGING):
+            deploy_solar_panels(id)
+            self._panel_state = PanelState.EXTENDED
+        elif state_changed_from(ActivityState.CHARGING):
+            retract_solar_panels(id)
+            self._panel_state = PanelState.HIDDEN
+
+        if state_changed_to(ActivityState.WORKING):
+            deploy_arm(id)
+        elif state_changed_from(ActivityState.WORKING):
+            retract_arm(id)
 
         self._activity_state = activity_state
         return self
@@ -107,15 +119,13 @@ class RoverState:
         id = self._id
         if self._battery.is_empty() and self._activity_state != ActivityState.CHARGING:
             if not DayNightCycle().is_day():
-                self._activity_state = ActivityState.IDLE
+                self.set_activity_state(ActivityState.IDLE)
                 return self
 
             logging.info(
                 f"[{id}] Battery has run out; setting state to '{ActivityState.CHARGING}' and deploying solar panels."
             )
-            self._activity_state = ActivityState.CHARGING
-            deploy_solar_panels(id)
-            self._panel_state = PanelState.EXTENDED
+            self.set_activity_state(ActivityState.CHARGING)
             return self
 
         if self._activity_state == ActivityState.CHARGING:
@@ -130,9 +140,7 @@ class RoverState:
             else:
                 return self
 
-            self._activity_state = ActivityState.IDLE
-            retract_solar_panels(id)
-            self._panel_state = PanelState.HIDDEN
+            self.set_activity_state(ActivityState.IDLE)
             return self
 
         return self
