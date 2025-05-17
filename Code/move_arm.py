@@ -51,6 +51,33 @@ def rotate_y(joint_handle, angle, rotation_matrix_getter=get_rotation_matrix_y):
         sim.setSphericalJointMatrix(joint_handle, rotation_matrix)
         time.sleep(STEP_DURATION_SECS)
 
+def grip(percent_open=1.0):
+    FULL_OPEN_Y = 0.027
+    CHANGE_PER_STEP = 0.001
+    STEP_DURATION = 0.1
+    handle = lambda joint_name: sim.getObject(
+        f"/{rover_name}/{joint_name}"
+    )
+    endpoint_handle = handle('ArmEndpoint')
+    endpoint_left_handle = handle('ArmEndpointLeft')
+    endpoint_right_handle = handle('ArmEndpointRight')
+
+    left_pos = sim.getObjectPosition(endpoint_left_handle, endpoint_handle)
+    right_pos = sim.getObjectPosition(endpoint_right_handle, endpoint_handle)
+
+    requested_y_pos = percent_open*FULL_OPEN_Y;
+    left_y_pos_diff = -requested_y_pos - left_pos[1]
+    right_y_pos_diff = requested_y_pos - right_pos[1]
+
+    get_operator = lambda val: 1 if val >= 0 else -1
+    steps = int(max(abs(right_y_pos_diff/CHANGE_PER_STEP), abs(left_y_pos_diff/CHANGE_PER_STEP)))
+    for _ in range(1, steps+1):
+        left_pos[1] = left_pos[1] + get_operator(left_y_pos_diff)*CHANGE_PER_STEP
+        right_pos[1] = right_pos[1] + get_operator(right_y_pos_diff)*CHANGE_PER_STEP
+        sim.setObjectPosition(endpoint_left_handle, endpoint_handle, left_pos)
+        sim.setObjectPosition(endpoint_right_handle, endpoint_handle, right_pos)
+        time.sleep(STEP_DURATION)
+
 def deploy_arm(rover_name):
     joint_handle = lambda joint_name: sim.getObject(
         f"/{rover_name}/{joint_name}"
@@ -68,5 +95,7 @@ def retract_arm(rover_name):
 if __name__ == "__main__":
     rover_name = "Chassis"
     deploy_arm(rover_name)
+    grip(0.5)
     time.sleep(1)
     retract_arm(rover_name)
+    grip(1.0)
