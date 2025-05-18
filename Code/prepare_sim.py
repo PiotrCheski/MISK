@@ -14,8 +14,8 @@ sim = client.require('sim')
 
 print("[Main] Loading Mars terrain scene...")
     
-current_dir = os.path.dirname(os.path.abspath(__file__))
-scene_path = os.path.join(current_dir, "mars_terrain.ttt")
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# scene_path = os.path.join(current_dir, "mars_terrain.ttt")
 
 #sim.loadScene(scene_path)
 print("[Main] Scene loaded.")

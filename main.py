@@ -26,11 +26,11 @@ def main():
     sim.startSimulation()
 
     print("[Main] Starting Centrala...")
-    centrala = Centrala()
+    centrala = Centrala(client)
 
     # Start monitoring thread
-    monitor_thread = threading.Thread(target=centrala.periodic_check)
-    monitor_thread.start()
+    # monitor_thread = threading.Thread(target=centrala.periodic_check)
+    # monitor_thread.start()
 
     try:
         while True:
