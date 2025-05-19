@@ -9,7 +9,7 @@ def deploy_solar_panels(rover_name: str, extension: float = 0.25, duration: floa
     """
     Wysuwa jednocześnie lewy i prawy panel słoneczny z łazika w CoppeliaSim.
 
-    :param rover_name: nazwa łazika w scenie, np. 'Chassis'
+    :param rover_name: nazwa łazika w scenie, np. 'Rover'
     :param extension: dystans wysuwania w metrach (domyślnie 0.25)
     :param duration: czas animacji w sekundach (domyślnie 2.0)
     """
@@ -60,7 +60,7 @@ def retract_solar_panels(rover_name: str, extension: float = 0.25, duration: flo
     """
     Chowa jednocześnie lewy i prawy panel słoneczny łazika w CoppeliaSim.
 
-    :param rover_name: nazwa łazika w scenie, np. 'Chassis'
+    :param rover_name: nazwa łazika w scenie, np. 'Rover'
     :param extension: dystans chowania w metrach (domyślnie 0.25)
     :param duration: czas animacji w sekundach (domyślnie 2.0)
     """
@@ -110,6 +110,6 @@ def retract_solar_panels(rover_name: str, extension: float = 0.25, duration: flo
 
 if __name__ == '__main__':
   sim.startSimulation()
-  deploy_solar_panels('Chassis')  # wysuwa oba panele jednocześnie
+  deploy_solar_panels('Rover')  # wysuwa oba panele jednocześnie
   time.sleep(5)
-  retract_solar_panels('Chassis')  # wysuwa oba panele jednocześnie
+  retract_solar_panels('Rover')  # wysuwa oba panele jednocześnie

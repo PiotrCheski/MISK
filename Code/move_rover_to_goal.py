@@ -6,7 +6,7 @@ from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 def wrap_to_pi(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
-def move_rover_to_goal(goal, v=0.1, alpha=0.1, pause_time=0.0):
+def move_rover_to_goal(rover_name, goal, v=0.01, alpha=0.1, pause_time=0.0):
     """
     Przesuwa łazik ('/Chassis') w kierunku goal w zadanej liczbie kroków,
     z płynną interpolacją pozycji i obrotu.
@@ -18,7 +18,7 @@ def move_rover_to_goal(goal, v=0.1, alpha=0.1, pause_time=0.0):
     goal.append(0)
     client = RemoteAPIClient()
     sim = client.require('sim')
-    rover_handle = sim.getObject('/Chassis')
+    rover_handle = sim.getObject("/" + rover_name)
 
     start_pos = sim.getObjectPosition(rover_handle, -1)
     x = start_pos[0]

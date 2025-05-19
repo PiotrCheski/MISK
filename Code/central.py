@@ -118,7 +118,8 @@ class Centrala:
         """Dodaje wszystkie pola jako statyczne przeszkody."""
         self.obstacle_list = []
         for field_name, area_obj in self.fields.items():
-            self.obstacle_list.append({'x': area_obj.x, 'y': area_obj.y, 'radius': FIELD_RADIUS_FOR_OBSTACLES, 'type': 'field', 'id': field_name})
+            #elf.obstacle_list.append({'x': area_obj.x, 'y': area_obj.y, 'radius': FIELD_RADIUS_FOR_OBSTACLES, 'type': 'field', 'id': field_name})
+            pass
         print(f"[Centrala] Zainicjalizowano {len(self.obstacle_list)} statycznych przeszkód (pola).")
 
     def _update_rover_obstacle_position(self, rover_id, new_x, new_y):

@@ -94,7 +94,7 @@ def retract_arm(rover_name):
 
 if __name__ == "__main__":
     sim.startSimulation()
-    rover_name = "Chassis"
+    rover_name = "Rover"
     deploy_arm(rover_name)
     grip(0.5)
     time.sleep(1)

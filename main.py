@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 from Code.central import Centrala
+from Code.rover import Rover
+from Code.move_rover_to_goal import move_rover_to_goal
 
 def main():
     client = RemoteAPIClient()
@@ -27,6 +29,14 @@ def main():
 
     print("[Main] Starting Centrala...")
     centrala = Centrala(client)
+
+    # Podpięcie łazików, jakiś for będzie trzeba zrobić
+    rover_names = ['Rover0']
+    for idx, name in enumerate(rover_names):
+        rover_idx = Rover(sim, name, centrala)
+    
+    task = centrala.request_new_task_for_rover(rover_names[0])
+    move_rover_to_goal(rover_names[0], list(task['target_coords']))
 
     # Start monitoring thread
     # monitor_thread = threading.Thread(target=centrala.periodic_check)
