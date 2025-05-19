@@ -3,7 +3,7 @@ import numpy as np
 import logging
 
 class RoverMover:
-    def __init__(self, sim, name, path, v=0.1, alpha=0.1):
+    def __init__(self, sim, name, path, v=1.0, alpha=0.1):
         self.sim = sim
         self.name = name
         self.path = path

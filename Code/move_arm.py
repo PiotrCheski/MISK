@@ -32,7 +32,7 @@ def to_list(np_array):
     return np_array.flatten().tolist()
 
 def rotate_y(sim, joint_handle, angle, rotation_matrix_getter=get_rotation_matrix_y):
-    ANGLE_CHANGE_PER_STEP = 5
+    ANGLE_CHANGE_PER_STEP = 20
     STEP_DURATION_SECS = 0.1
     direction = 1 if angle >= 0 else -1
     steps = abs(angle) // ANGLE_CHANGE_PER_STEP
@@ -51,7 +51,7 @@ def rotate_y(sim, joint_handle, angle, rotation_matrix_getter=get_rotation_matri
 
 def grip(sim, rover_name, percent_open=1.0):
     FULL_OPEN_Y = 0.027
-    CHANGE_PER_STEP = 0.001
+    CHANGE_PER_STEP = 0.01
     STEP_DURATION = 0.1
     handle = lambda joint_name: sim.getObject(
         f"/{rover_name}/{joint_name}"

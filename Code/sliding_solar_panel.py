@@ -54,7 +54,7 @@ def deploy_solar_panels(sim, rover_name: str, extension: float = 0.25, duration:
 
         sim.step()
 
-def retract_solar_panels(sim, rover_name: str, extension: float = 0.25, duration: float = 2.0):
+def retract_solar_panels(sim, rover_name: str, extension: float = 0.25, duration: float = 1.0):
     """
     Chowa jednocześnie lewy i prawy panel słoneczny łazika w CoppeliaSim.
 

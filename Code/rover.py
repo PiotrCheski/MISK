@@ -16,7 +16,7 @@ class Rover:
         self.sim = sim
         self.name = rover_name
         self.handle = sim.getObjectHandle(f'/{rover_name}')
-        self.central = centrala
+        self.centrala = centrala
         self.task_queue = []
         self.position = self.get_position()
         self.planner = RRTStar(sim, [0,0], [0,0], [[0,0,0]])
@@ -27,14 +27,29 @@ class Rover:
         self.mover = RoverMover(sim, rover_name, [])
 
         # rejestracja w centrali
-        self.central.register_rover(self.name, self, None, self.position)
+        self.centrala.register_rover(self.name, self, None, self.position)
 
     def tick(self):
         self.state.update()
 
         if self.state.is_forced_idle():
             return
+        
+        # 1. Jeśli IDLE — pobierz nowe zadanie
+        if self.state.activity_state() == ActivityState.IDLE:
+            task = self.centrala.request_new_task_for_rover(self.name)
+            if task is None:
+                logging.debug(f"[{self.name}] Brak nowych zadań.")
+                return
+            
+            self.current_task = task
+            self.goal = task['target_coords']
+            self.plan_new_path(self.goal, obstacles=[])
+            self.state.set_activity_state(ActivityState.MOVING)
+            logging.info(f"[{self.name}] Nowe zadanie: {task['type']} dla pola {task['field_name']}.")
 
+            return
+        # 2. Jeśli MOVING — wykonaj jazdę
         if self.state.activity_state() == ActivityState.MOVING:
             if self.mover.done:
                 logging.info(f"[{self.name}] Reached goal.")
@@ -43,7 +58,13 @@ class Rover:
 
             self._move_rover()
             return
-
+        # 3. Jeśli WORKING — wykonaj zadanie
+        if self.state.activity_state() == ActivityState.WORKING:
+            self.perform_task(self.current_task)
+            self.centrala.report_task_completed(self.name, self.current_task['id'], "success")
+            self.state.set_activity_state(ActivityState.IDLE)
+            logging.info(f"[{self.name}] Zadanie ukończone, gotowy na nowe.")
+            return
 
     def _move_rover(self):
         self.mover.step()
@@ -89,13 +110,15 @@ class Rover:
         self.planner.plan()
         # if path empty then try 10 times
         i = 0
-        while self.planner.path_ is None or i >10:
+        while self.planner.path_ is None or i >15:
             self.planner.increase_iterations()
             self.planner.plan()
             i+=1
         # if still not path then there is none avalible, set you position as point
         if self.planner.path_ is None:
             self.planner.path_=[self.position]
+            print("No path found, setting position as goal")
+
 
     # solar panel deployment
     def deploy_rover_panel(self):
@@ -115,4 +138,19 @@ class Rover:
         retract_arm(self.sim, self.name)
         grip(self.sim, self.name, 1.0)
 
+    def perform_task(self, task):
+        # symulacja pracy — np. czasowa pauza, ruch ramienia, pomiar
+        logging.info(f"[{self.name}] Wykonuję zadanie: {task['type']} na polu {task['field_name']}.")
+        if task['type'] == "adjust_pH":
+            self.centrala.fields[task['field_name']].pH = 7.0
+            self.deploy_rover_arm()
+            self.retract_rover_arm()
+            print(f"Nowe pH w polu {task['field_name']}: {self.centrala.fields[task['field_name']].pH}")
+        elif task['type'] == "restore_humidity":
+            self.centrala.fields[task['field_name']].humidity = random.uniform(60, 75)
+            self.deploy_rover_arm()
+            self.retract_rover_arm()
+            print(f"Nowa wilgotność w polu {task['field_name']}: {self.centrala.fields[task['field_name']].humidity}")
+        elif task['type'] == "visit_scan":
+            pass
     # todo: bateria

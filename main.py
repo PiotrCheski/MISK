@@ -40,21 +40,21 @@ def main():
 
     rover_names = ['Rover0', 'Rover1']
     rover0 = Rover(sim, rover_names[0], centrala)
-    # rover1 = Rover(sim, rover_names[1], centrala)
+    rover1 = Rover(sim, rover_names[1], centrala)
 
-    rover_handle0 = sim.getObject("/" + rover_names[0])
+    #rover_handle0 = sim.getObject("/" + rover_names[0])
     # rover_handle1 = sim.getObject("/" + rover_names[1])
 
-    task0 = centrala.request_new_task_for_rover(rover_names[0])
+    #task0 = centrala.request_new_task_for_rover(rover_names[0])
     # task1 = centrala.request_new_task_for_rover(rover_names[1])
 
-    obstacles = []
-    rover0.plan_new_path(task0['target_coords'], obstacles)
+    #obstacles = []
+    #rover0.plan_new_path(task0['target_coords'], obstacles)
     # rover1.plan_new_path(task1['target_coords'], obstacles)
 
     rover_names_list = [
         rover0,
-        # rover1,
+        rover1,
     ]
     try:
         while True:
