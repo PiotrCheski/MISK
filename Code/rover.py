@@ -32,6 +32,7 @@ class Rover:
     # plan and move to goal
     def plan_new_path(self, goal, obstacles):    
         self.find_path(goal, obstacles)
+        #visualise_path(self.sim, self.planner.path_, random.randint(0,1000))
         self.mover.set_new_path(self.planner.path_)
 
     def detect_marker(self, visualise_image=False):

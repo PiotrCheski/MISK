@@ -33,8 +33,8 @@ def main():
     #rover_idx.deploy_rover_arm()
     #rover_idx.retract_rover_arm()
     rovers = [rover_id1, rover_id2]
-    rover_id1.plan_new_path([-2.0, -2.0], [[-1.1, 0.1, 1.0], [-2.1, 2.1, 0.5] ])
-    rover_id2.plan_new_path([-2.0, -2.0], [[-1.1, 0.1, 1.0], [-2.1, 2.1, 0.5] ])
+    rover_id1.plan_new_path([-1.0, -1.0], [])
+    rover_id2.plan_new_path([-1.0, -1.0], [])
 
     # Start monitoring thread
     # monitor_thread = threading.Thread(target=centrala.periodic_check)

@@ -143,7 +143,6 @@ class RRTStar:
                 self.path_ = self.generate_path(new_node)
                 self.goal_reached_ = True
                 return
-            self.sim_.step()
     
     def update_state(self, new_start, new_goal, new_obstacles):
         self.start_ = Node(new_start[0], new_start[1])
