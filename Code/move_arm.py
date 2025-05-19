@@ -4,9 +4,6 @@ import numpy as np
 
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 
-client = RemoteAPIClient()
-sim = client.require("sim")
-
 
 def get_rotation_matrix_x(theta_deg):
     theta = math.radians(theta_deg)
@@ -34,7 +31,7 @@ def to_numpy_array(lst):
 def to_list(np_array):
     return np_array.flatten().tolist()
 
-def rotate_y(joint_handle, angle, rotation_matrix_getter=get_rotation_matrix_y):
+def rotate_y(sim, joint_handle, angle, rotation_matrix_getter=get_rotation_matrix_y):
     ANGLE_CHANGE_PER_STEP = 5
     STEP_DURATION_SECS = 0.1
     direction = 1 if angle >= 0 else -1
@@ -49,9 +46,10 @@ def rotate_y(joint_handle, angle, rotation_matrix_getter=get_rotation_matrix_y):
         )
 
         sim.setSphericalJointMatrix(joint_handle, rotation_matrix)
-        time.sleep(STEP_DURATION_SECS)
+        sim.step()
+        #time.sleep(STEP_DURATION_SECS)
 
-def grip(percent_open=1.0):
+def grip(sim, rover_name, percent_open=1.0):
     FULL_OPEN_Y = 0.027
     CHANGE_PER_STEP = 0.001
     STEP_DURATION = 0.1
@@ -76,27 +74,30 @@ def grip(percent_open=1.0):
         right_pos[1] = right_pos[1] + get_operator(right_y_pos_diff)*CHANGE_PER_STEP
         sim.setObjectPosition(endpoint_left_handle, endpoint_handle, left_pos)
         sim.setObjectPosition(endpoint_right_handle, endpoint_handle, right_pos)
-        time.sleep(STEP_DURATION)
+        sim.step()
+        #time.sleep(STEP_DURATION)
 
-def deploy_arm(rover_name):
+def deploy_arm(sim, rover_name):
     joint_handle = lambda joint_name: sim.getObject(
         f"/{rover_name}/{joint_name}"
     )
-    rotate_y(joint_handle('ArmJoint1'), 90)
-    rotate_y(joint_handle('ArmJoint2'), 90)
+    rotate_y(sim, joint_handle('ArmJoint1'), 90)
+    rotate_y(sim, joint_handle('ArmJoint2'), 90)
 
-def retract_arm(rover_name):
+def retract_arm(sim, rover_name):
     joint_handle = lambda joint_name: sim.getObject(
         f"/{rover_name}/{joint_name}"
     )
-    rotate_y(joint_handle('ArmJoint1'), -90)
-    rotate_y(joint_handle('ArmJoint2'), -90)
+    rotate_y(sim, joint_handle('ArmJoint1'), -90)
+    rotate_y(sim, joint_handle('ArmJoint2'), -90)
 
 if __name__ == "__main__":
+    client = RemoteAPIClient()
+    sim = client.require("sim")
     sim.startSimulation()
     rover_name = "Rover"
-    deploy_arm(rover_name)
-    grip(0.5)
-    time.sleep(1)
-    retract_arm(rover_name)
-    grip(1.0)
+    deploy_arm(sim, rover_name)
+    grip(sim, rover_name, 0.5)
+    sim.step()
+    retract_arm(sim, rover_name)
+    grip(sim, rover_name, 1.0)

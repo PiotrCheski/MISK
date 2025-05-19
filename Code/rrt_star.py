@@ -142,3 +142,14 @@ class RRTStar:
                 self.path_ = self.generate_path(new_node)
                 self.goal_reached_ = True
                 return
+    
+    def update_state(self, new_start, new_goal, new_obstacles):
+        self.start_ = Node(new_start[0], new_start[1])
+        self.goal_ = Node(new_goal[0], new_goal[1])
+        self.obstacles_ = new_obstacles
+        self.node_list_ = [self.start_]
+        self.path_ = None
+        self.goal_reached_ = False
+    
+    def increase_iterations(self):
+        self.max_ierations_ = math.ceil(1.2*self.max_ierations_)

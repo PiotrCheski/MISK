@@ -14,7 +14,7 @@ def main():
 
     print("[Main] Starting simulation...")
     sim.setStepping(True) # in discrete mode, not countinous time (cameras will not work with api)
-    #sim.startSimulation() 
+    sim.startSimulation() 
 
     print("[Main] Calculating path...")
     rover_handle = sim.getObject('/Chassis')
@@ -34,7 +34,8 @@ def main():
     #rover move
     print("[Main] Moving rover!")
     for point in my_planer.path_:
-        move_rover_to_goal(point)
+        move_rover_to_goal(sim, '/Chassis',point)
+    sim.step()
     time.sleep(1)
     # remove points
     print("[Main] Now removing!")

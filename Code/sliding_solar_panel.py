@@ -2,10 +2,8 @@
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 import time
 
-client = RemoteAPIClient()
-sim = client.require('sim')
 
-def deploy_solar_panels(rover_name: str, extension: float = 0.25, duration: float = 2.0):
+def deploy_solar_panels(sim, rover_name: str, extension: float = 0.25, duration: float = 2.0):
     """
     Wysuwa jednocześnie lewy i prawy panel słoneczny z łazika w CoppeliaSim.
 
@@ -54,9 +52,9 @@ def deploy_solar_panels(rover_name: str, extension: float = 0.25, duration: floa
         sim.setObjectPosition(left_panel_handle, rover_handle, interp_left)
         sim.setObjectPosition(right_panel_handle, rover_handle, interp_right)
 
-        time.sleep(0.01)
+        sim.step()
 
-def retract_solar_panels(rover_name: str, extension: float = 0.25, duration: float = 2.0):
+def retract_solar_panels(sim, rover_name: str, extension: float = 0.25, duration: float = 2.0):
     """
     Chowa jednocześnie lewy i prawy panel słoneczny łazika w CoppeliaSim.
 
@@ -105,11 +103,12 @@ def retract_solar_panels(rover_name: str, extension: float = 0.25, duration: flo
         sim.setObjectPosition(left_panel_handle, rover_handle, interp_left)
         sim.setObjectPosition(right_panel_handle, rover_handle, interp_right)
 
-        time.sleep(0.01)
+        sim.step()
 
 
 if __name__ == '__main__':
-  sim.startSimulation()
-  deploy_solar_panels('Rover')  # wysuwa oba panele jednocześnie
+  client = RemoteAPIClient()
+  sim = client.require('sim')
+  deploy_solar_panels(sim, 'Rover')  # wysuwa oba panele jednocześnie
   time.sleep(5)
-  retract_solar_panels('Rover')  # wysuwa oba panele jednocześnie
+  retract_solar_panels(sim, 'Rover')  # wysuwa oba panele jednocześnie
