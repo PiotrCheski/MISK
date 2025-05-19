@@ -1,7 +1,7 @@
 # for planner logic
 map_size_ub : [10.0, 10.0] # górne wymairy mapy
 map_size_lb : [-10.0, -10.0] # dolne wymiary mapy
-step_size : 0.05 # długość kroku algorytmu
+step_size : 0.1 # długość kroku algorytmu
 max_ierations : 1000  # liczba iteracji algorytmu
 generate_chance : 0.2 # szansa że losowy node to cel
 search_radius : 0.1 # odległość w której szuka sąsiadów 

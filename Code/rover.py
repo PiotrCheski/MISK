@@ -4,9 +4,10 @@ from Code.move_arm import deploy_arm, retract_arm, grip
 from Code.move_rover_to_goal import move_rover_to_goal
 from Code.rrt_star_visualise import visualise_path, remove_path
 from Code.locate_marker import MarkerDetector
+from Code.rover_mover import RoverMover
 import cv2
 import numpy as np
-
+import random
 
 class Rover:
     def __init__(self, sim, rover_name, centrala):
@@ -16,21 +17,22 @@ class Rover:
         self.central = centrala
         self.task_queue = []
         self.position = self.get_position()
-        self.planner = RRTStar([0,0], [0,0], [[0,0,0]])
+        self.planner = RRTStar(sim, [0,0], [0,0], [[0,0,0]])
         camera_name = f"/{rover_name}/Arm/Cuboid/Cylinder/visionSensor"
         self.camera_handle = sim.getObjectHandle(camera_name)
         self.detector = MarkerDetector(sim, self.camera_handle, self.handle)
+        self.mover = RoverMover(sim, rover_name, [])
         
         # rejestracja w centrali
         self.central.register_rover(self.name, self, None, self.position)
+
+    def move_rover(self):
+        self.mover.step()
     
     # plan and move to goal
-    def move_to_goal(self, goal, obstacles):
+    def plan_new_path(self, goal, obstacles):    
         self.find_path(goal, obstacles)
-        ph, lh = visualise_path(self.sim, self.planner.path_, 0)
-        for point in self.planner.path_:
-            move_rover_to_goal(self.sim, self.name, point)
-        remove_path(self.sim, ph, lh)
+        self.mover.set_new_path(self.planner.path_)
 
     def detect_marker(self, visualise_image=False):
         self.sim.step()

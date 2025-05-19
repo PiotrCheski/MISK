@@ -18,7 +18,8 @@ class Node:
         self.cost_= 0
 
 class RRTStar:
-    def __init__(self, start, goal, obstacle_list):
+    def __init__(self, sim,  start, goal, obstacle_list):
+        self.sim_ = sim
         # common params for rrt*, constant in simulation, need to be fit for enviroment
         config_path = os.path.join(os.path.dirname(__file__), "rrt_star_config.yaml")
         with open(config_path, 'r') as file:
@@ -142,6 +143,7 @@ class RRTStar:
                 self.path_ = self.generate_path(new_node)
                 self.goal_reached_ = True
                 return
+            self.sim_.step()
     
     def update_state(self, new_start, new_goal, new_obstacles):
         self.start_ = Node(new_start[0], new_start[1])
