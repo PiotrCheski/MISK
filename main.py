@@ -59,7 +59,7 @@ def main():
     try:
         while True:
             for rover in rover_names_list:
-                rover.move_rover()
+                rover.tick()
             sim.step()
     # while True:
     #    task = centrala.request_new_task_for_rover(rover_names[0])

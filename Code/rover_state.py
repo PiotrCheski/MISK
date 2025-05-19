@@ -1,6 +1,6 @@
 from enum import Enum
 import logging
-import threading
+import time
 
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 
@@ -12,9 +12,9 @@ from Code.move_arm import deploy_arm, retract_arm
 def multiton(cls):
     instances = {}
 
-    def getinstance(id):
+    def getinstance(rover_ref, id):
         if id not in instances:
-            instances[id] = cls(id)
+            instances[id] = cls(rover_ref, id)
         return instances[id]
 
     return getinstance
@@ -33,6 +33,7 @@ class ActivityState(Enum):
 
 
 class Battery:
+    UPDATE_INTERVAL_SECS = 1
     MIN_CAPACITY = 0
     MAX_CAPACITY = 100
     # rates per tick
@@ -44,6 +45,7 @@ class Battery:
     }
 
     def __init__(self):
+        self._last_tick_time = 0
         self._charge = 100
 
     def _clamp_charge(self):
@@ -57,7 +59,16 @@ class Battery:
     def is_full(self):
         return self._charge == Battery.MAX_CAPACITY
 
+    def _is_timeout(self):
+        current_time = time.time()
+        return current_time - self._last_tick_time < self.UPDATE_INTERVAL_SECS
+
+
     def tick(self, id, activity_state: ActivityState, has_charging_conditions: bool):
+        if self._is_timeout():
+            return
+
+        self._last_tick_time = time.time()
         prev_charge = self._charge
         if activity_state == ActivityState.CHARGING and not has_charging_conditions:
             pass
@@ -72,11 +83,8 @@ class Battery:
 
 @multiton
 class RoverState:
-    UPDATE_INTERVAL_SECS = 1
-
-    def __init__(self, id):
-        client = RemoteAPIClient()
-        self._sim = client.require("sim")
+    def __init__(self, rover_ref, id):
+        self._rover_ref = rover_ref
         # The id should match the parameters passed to solar panel functions
         self._id = id
         # Default states
@@ -85,10 +93,6 @@ class RoverState:
         self._prev_action = None
         # Battery
         self._battery = Battery()
-        # Update periodically
-        self._update_thread = threading.Thread(target=self.__update_cb)
-        self._update_thread_stop_event = threading.Event()
-        self._update_thread.start()
 
     def battery(self):
         return self._battery
@@ -112,21 +116,27 @@ class RoverState:
         state_changed_from = lambda state: prev_state == state and activity_state != state
 
         if state_changed_to(ActivityState.CHARGING):
-            deploy_solar_panels(self._sim, id)
+            self._rover_ref.deploy_rover_panel()
             self._panel_state = PanelState.EXTENDED
         elif state_changed_from(ActivityState.CHARGING):
-            retract_solar_panels(self._sim, id)
+            self._rover_ref.retract_rover_panel()
             self._panel_state = PanelState.HIDDEN
 
         if state_changed_to(ActivityState.WORKING):
-            deploy_arm(self._sim, id)
+            self._rover_ref.deploy_rover_arm()
+            logging.info(f"[{id}] Starting work; deploying arm.")
         elif state_changed_from(ActivityState.WORKING):
-            retract_arm(self._sim, id)
+            self._rover_ref.retract_rover_arm()
+            logging.info(f"[{id}] Stopping work; retracting arm.")
 
         self._activity_state = activity_state
 
         if activity_state in [ActivityState.MOVING, ActivityState.WORKING]:
             self._prev_action = activity_state
+
+        logging.info(
+            f"[{id}] Set activity state: {prev_state}->{self._activity_state}."
+        )
 
         return self
 
@@ -168,11 +178,6 @@ class RoverState:
             return self
 
         return self
-
-    def __update_cb(self):
-        while not self._update_thread_stop_event.is_set():
-            self.__update()
-            self._update_thread_stop_event.wait(self.UPDATE_INTERVAL_SECS)
 
     def update(self):
         self.__maybe_update_state()

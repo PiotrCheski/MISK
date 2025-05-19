@@ -9,6 +9,7 @@ from Code.rover_state import RoverState, ActivityState
 import cv2
 import numpy as np
 import random
+import logging
 
 class Rover:
     def __init__(self, sim, rover_name, centrala):
@@ -22,32 +23,41 @@ class Rover:
         camera_name = f"/{rover_name}/Arm/Cuboid/Cylinder/visionSensor"
         self.camera_handle = sim.getObjectHandle(camera_name)
         self.detector = MarkerDetector(sim, self.camera_handle, self.handle)
-        self.state = RoverState(rover_name)
+        self.state = RoverState(self, rover_name)
         self.mover = RoverMover(sim, rover_name, [])
 
         # rejestracja w centrali
         self.central.register_rover(self.name, self, None, self.position)
 
-    def move_rover(self):
-        if self.mover.done:
-            self.state.set_activity_state(ActivityState.WORKING)
-            return
+    def tick(self):
+        self.state.update()
 
         if self.state.is_forced_idle():
             return
 
-        self.state.set_activity_state(ActivityState.MOVING)
+        if self.state.activity_state() == ActivityState.MOVING:
+            if self.mover.done:
+                logging.info(f"[{self.name}] Reached goal.")
+                self.state.set_activity_state(ActivityState.WORKING)
+                return
+
+            self._move_rover()
+            return
+
+
+    def _move_rover(self):
         self.mover.step()
 
     # plan and move to goal
     def plan_new_path(self, goal, obstacles):
         self.find_path(goal, obstacles)
-        #visualise_path(self.sim, self.planner.path_, random.randint(0,1000))
+        # visualise_path(self.sim, self.planner.path_, random.randint(0,1000))
         self.mover.set_new_path(self.planner.path_)
+        self.state.set_activity_state(ActivityState.MOVING)
 
     def detect_marker(self, visualise_image=False):
         self.sim.step()
-        #matrix = markerdetector.get_camera_location()
+        # matrix = markerdetector.get_camera_location()
         # get image
         img, [resX, resY] = self.sim.getVisionSensorImg(self.camera_handle)
         img = np.frombuffer(img, dtype=np.uint8).reshape(resY, resX, 3)
@@ -61,8 +71,9 @@ class Rover:
                 tvec = marker[2]
                 rotm = marker[3]
                 marker_position, marker_orientation = self.detector.calculate_marker_location(tvec, rotm)
-                #print(f"Found marker! \n at:{marker_position[0]},{marker_position[1]},{marker_position[2]}  \n with orientation:{marker_orientation[0]},{marker_orientation[1]},{marker_orientation[2]}")
+                # print(f"Found marker! \n at:{marker_position[0]},{marker_position[1]},{marker_position[2]}  \n with orientation:{marker_orientation[0]},{marker_orientation[1]},{marker_orientation[2]}")
                 detected.append([marker_position[0], marker_position[1], 10])
+
         return detected
 
     # return position
@@ -105,4 +116,3 @@ class Rover:
         grip(self.sim, self.name, 1.0)
 
     # todo: bateria
-

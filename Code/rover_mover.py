@@ -20,8 +20,6 @@ class RoverMover:
     def step(self):
         self.pos = self.sim.getObjectPosition(self.handle, -1)
         if self.done or self.goal_index >= len(self.path):
-            if not self.done:
-                logging.info(f"[{self.name}] Reached goal.")
             self.done = True
             return
 

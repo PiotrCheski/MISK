@@ -55,9 +55,8 @@ def main():
 
     try:
         while True:
-
             for rover in rovers:
-                rover.move_rover()
+                rover.tick()
 
             sim.step()  # triggers next simulation step (by defalt step is 0.05 seconds)
     except KeyboardInterrupt:
