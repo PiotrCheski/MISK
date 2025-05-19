@@ -109,6 +109,6 @@ def retract_solar_panels(sim, rover_name: str, extension: float = 0.25, duration
 if __name__ == '__main__':
   client = RemoteAPIClient()
   sim = client.require('sim')
-  deploy_solar_panels(sim, 'Rover')  # wysuwa oba panele jednocześnie
+  deploy_solar_panels(sim, 'Rover0')  # wysuwa oba panele jednocześnie
   time.sleep(5)
-  retract_solar_panels(sim, 'Rover')  # wysuwa oba panele jednocześnie
+  retract_solar_panels(sim, 'Rover0')  # wysuwa oba panele jednocześnie

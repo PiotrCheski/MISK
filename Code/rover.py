@@ -5,6 +5,7 @@ from Code.move_rover_to_goal import move_rover_to_goal
 from Code.rrt_star_visualise import visualise_path, remove_path
 from Code.locate_marker import MarkerDetector
 from Code.rover_mover import RoverMover
+from Code.rover_state import RoverState, ActivityState
 import cv2
 import numpy as np
 import random
@@ -21,16 +22,25 @@ class Rover:
         camera_name = f"/{rover_name}/Arm/Cuboid/Cylinder/visionSensor"
         self.camera_handle = sim.getObjectHandle(camera_name)
         self.detector = MarkerDetector(sim, self.camera_handle, self.handle)
+        self.state = RoverState(rover_name)
         self.mover = RoverMover(sim, rover_name, [])
-        
+
         # rejestracja w centrali
         self.central.register_rover(self.name, self, None, self.position)
 
     def move_rover(self):
+        if self.mover.done:
+            self.state.set_activity_state(ActivityState.WORKING)
+            return
+
+        if self.state.is_forced_idle():
+            return
+
+        self.state.set_activity_state(ActivityState.MOVING)
         self.mover.step()
-    
+
     # plan and move to goal
-    def plan_new_path(self, goal, obstacles):    
+    def plan_new_path(self, goal, obstacles):
         self.find_path(goal, obstacles)
         #visualise_path(self.sim, self.planner.path_, random.randint(0,1000))
         self.mover.set_new_path(self.planner.path_)
@@ -54,12 +64,12 @@ class Rover:
                 #print(f"Found marker! \n at:{marker_position[0]},{marker_position[1]},{marker_position[2]}  \n with orientation:{marker_orientation[0]},{marker_orientation[1]},{marker_orientation[2]}")
                 detected.append([marker_position[0], marker_position[1], 10])
         return detected
-    
+
     # return position
     def get_position(self):
         pos = self.sim.getObjectPosition(self.handle, -1)
         return pos  # np. [x, y, z]
-    
+
     # use planner to find path
     def find_path(self, goal, obstacles):
         # update map state
@@ -93,6 +103,6 @@ class Rover:
     def retract_rover_arm(self):
         retract_arm(self.sim, self.name)
         grip(self.sim, self.name, 1.0)
-    
+
     # todo: bateria
 

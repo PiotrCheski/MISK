@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import logging
 
 class RoverMover:
     def __init__(self, sim, name, path, v=0.1, alpha=0.1):
@@ -19,6 +20,8 @@ class RoverMover:
     def step(self):
         self.pos = self.sim.getObjectPosition(self.handle, -1)
         if self.done or self.goal_index >= len(self.path):
+            if not self.done:
+                logging.info(f"[{self.name}] Reached goal.")
             self.done = True
             return
 
@@ -42,10 +45,10 @@ class RoverMover:
         y = self.pos[1] + self.dt * self.v * math.sin(target_yaw)
         self.pos = [x, y, self.z]
         self.sim.setObjectPosition(self.handle, -1, self.pos)
-    
+
     def wrap_to_pi(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
-    
+
     def set_new_path(self, path):
         self.path = path
         self.goal_index = 0

@@ -2,9 +2,11 @@ from enum import Enum
 import logging
 import threading
 
-from sliding_solar_panel import deploy_solar_panels, retract_solar_panels, sim
-from day_night_cycle import DayNightCycle
-from move_arm import deploy_arm, retract_arm
+from coppeliasim_zmqremoteapi_client import RemoteAPIClient
+
+from Code.sliding_solar_panel import deploy_solar_panels, retract_solar_panels
+from Code.day_night_cycle import DayNightCycle
+from Code.move_arm import deploy_arm, retract_arm
 
 
 def multiton(cls):
@@ -36,8 +38,8 @@ class Battery:
     # rates per tick
     BATTERY_CHANGE_RATES = {
         ActivityState.IDLE: -1,
-        ActivityState.MOVING: -10,
-        ActivityState.WORKING: -5,
+        ActivityState.MOVING: -5,
+        ActivityState.WORKING: -3,
         ActivityState.CHARGING: 10,
     }
 
@@ -63,9 +65,9 @@ class Battery:
             self._charge += Battery.BATTERY_CHANGE_RATES[activity_state]
 
         self._clamp_charge()
-        logging.info(
-            f"[{id}] Battery tick -- state: {activity_state.value}, can_charge: {has_charging_conditions} | {prev_charge} -> {self._charge}"
-        )
+        # logging.info(
+        #     f"[{id}] Battery tick -- state: {activity_state.value}, can_charge: {has_charging_conditions} | {prev_charge} -> {self._charge}"
+        # )
 
 
 @multiton
@@ -73,11 +75,14 @@ class RoverState:
     UPDATE_INTERVAL_SECS = 1
 
     def __init__(self, id):
+        client = RemoteAPIClient()
+        self._sim = client.require("sim")
         # The id should match the parameters passed to solar panel functions
         self._id = id
         # Default states
         self._panel_state = PanelState.HIDDEN
         self._activity_state = ActivityState.IDLE
+        self._prev_action = None
         # Battery
         self._battery = Battery()
         # Update periodically
@@ -94,6 +99,12 @@ class RoverState:
     def is_charging(self):
         return self._activity_state == ActivityState.CHARGING
 
+    def activity_state(self):
+        return self._activity_state
+
+    def is_forced_idle(self):
+        return self.activity_state() == ActivityState.CHARGING or self.battery().is_empty()
+
     def set_activity_state(self, activity_state: ActivityState):
         id = self._id
         prev_state = self._activity_state
@@ -101,29 +112,38 @@ class RoverState:
         state_changed_from = lambda state: prev_state == state and activity_state != state
 
         if state_changed_to(ActivityState.CHARGING):
-            deploy_solar_panels(id)
+            deploy_solar_panels(self._sim, id)
             self._panel_state = PanelState.EXTENDED
         elif state_changed_from(ActivityState.CHARGING):
-            retract_solar_panels(id)
+            retract_solar_panels(self._sim, id)
             self._panel_state = PanelState.HIDDEN
 
         if state_changed_to(ActivityState.WORKING):
-            deploy_arm(id)
+            deploy_arm(self._sim, id)
         elif state_changed_from(ActivityState.WORKING):
-            retract_arm(id)
+            retract_arm(self._sim, id)
 
         self._activity_state = activity_state
+
+        if activity_state in [ActivityState.MOVING, ActivityState.WORKING]:
+            self._prev_action = activity_state
+
         return self
 
     def __maybe_update_state(self):
         id = self._id
+        if self.battery().is_empty() and self._activity_state in [ActivityState.MOVING, ActivityState.WORKING]:
+            logging.info(
+                f"[{id}] Battery has run out, changing state to {ActivityState.IDLE} until recharged."
+            )
+            self.set_activity_state(ActivityState.IDLE)
+
         if self._battery.is_empty() and self._activity_state != ActivityState.CHARGING:
             if not DayNightCycle().is_day():
-                self.set_activity_state(ActivityState.IDLE)
                 return self
 
             logging.info(
-                f"[{id}] Battery has run out; setting state to '{ActivityState.CHARGING}' and deploying solar panels."
+                f"[{id}] Starting recharging; deploying solar panels."
             )
             self.set_activity_state(ActivityState.CHARGING)
             return self
@@ -131,16 +151,20 @@ class RoverState:
         if self._activity_state == ActivityState.CHARGING:
             if self._battery.is_full():
                 logging.info(
-                    f"[{id}] Battery recharged; removing the '{ActivityState.CHARGING}' state and retracting solar panels."
+                    f"[{id}] Battery recharged; removing the '{ActivityState.CHARGING}' state; retracting solar panels."
                 )
             elif not DayNightCycle().is_day():
                 logging.info(
-                    f"[{id}] The sun is gone; removing the '{ActivityState.CHARGING}' state and retracting solar panels."
+                    f"[{id}] The sun is gone; removing the '{ActivityState.CHARGING}' state; retracting solar panels."
                 )
             else:
                 return self
 
-            self.set_activity_state(ActivityState.IDLE)
+            if self._prev_action:
+                logging.info(
+                    f"[{id}] Returning to previous action: '{self._prev_action}'"
+                )
+                self.set_activity_state(self._prev_action)
             return self
 
         return self
@@ -150,7 +174,7 @@ class RoverState:
             self.__update()
             self._update_thread_stop_event.wait(self.UPDATE_INTERVAL_SECS)
 
-    def __update(self):
+    def update(self):
         self.__maybe_update_state()
         self._battery.tick(
             self._id, self._activity_state, self.has_charging_conditions()
@@ -164,6 +188,8 @@ if __name__ == "__main__":
         datefmt="%H:%M:%S",
     )
 
+    client = RemoteAPIClient()
+    sim = client.require('sim')
     sim.startSimulation()
 
-    rover_state = RoverState("Chassis").set_activity_state(ActivityState.MOVING)
+    rover_state = RoverState("Rover0").set_activity_state(ActivityState.MOVING)
