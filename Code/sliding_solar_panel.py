@@ -3,7 +3,7 @@ from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 import time
 
 
-def deploy_solar_panels(sim, rover_name: str, extension: float = 0.25, duration: float = 2.0):
+def deploy_solar_panels(sim, rover_name: str, extension: float = 0.25, duration: float = 0.5):
     """
     Wysuwa jednocześnie lewy i prawy panel słoneczny z łazika w CoppeliaSim.
 

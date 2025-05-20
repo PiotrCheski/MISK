@@ -8,6 +8,7 @@ from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 from Code.central import Centrala
 from Code.rover import Rover
 from Code.move_rover_to_goal import move_rover_to_goal
+from Code.duplicate_rover import duplicate_rover
 
 def main():
     logging.basicConfig(
@@ -38,24 +39,17 @@ def main():
     print("[Main] Starting Centrala...")
     centrala = Centrala(client)
 
-    rover_names = ['Rover0', 'Rover1']
-    rover0 = Rover(sim, rover_names[0], centrala)
-    rover1 = Rover(sim, rover_names[1], centrala)
+    num_rovers = 2
 
-    #rover_handle0 = sim.getObject("/" + rover_names[0])
-    # rover_handle1 = sim.getObject("/" + rover_names[1])
+    sim_object_names = [f"Rover{i}" for i in range(num_rovers)]
 
-    #task0 = centrala.request_new_task_for_rover(rover_names[0])
-    # task1 = centrala.request_new_task_for_rover(rover_names[1])
+    for i in range(1, num_rovers):
+        rover_name = "/Rover0"
+        duplicate_rover(sim, rover_name, sim_object_names[i], position_offset=i * 0.5)
 
-    #obstacles = []
-    #rover0.plan_new_path(task0['target_coords'], obstacles)
-    # rover1.plan_new_path(task1['target_coords'], obstacles)
+    rover_names_list = [Rover(sim, sim_object_names[i], centrala)
+                        for i in range(num_rovers)]
 
-    rover_names_list = [
-        rover0,
-        rover1,
-    ]
     try:
         while True:
             for rover in rover_names_list:
