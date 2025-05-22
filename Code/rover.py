@@ -26,6 +26,8 @@ class Rover:
         self.state = RoverState(self, rover_name)
         self.mover = RoverMover(sim, rover_name, [])
 
+        self.discovered_markers = []
+        self.replan_counter = 0
         # rejestracja w centrali
         self.centrala.register_rover(self.name, self, None, self.position)
 
@@ -49,14 +51,25 @@ class Rover:
             logging.info(f"[{self.name}] Nowe zadanie: {task['type']} dla pola {task['field_name']}.")
 
             return
-        # 2. Jeśli MOVING — wykonaj jazdę
+        # 2. Jeśli MOVING — wykonaj jazdę, popraw trasę co (X/20) sekund
         if self.state.activity_state() == ActivityState.MOVING:
             if self.mover.done:
                 logging.info(f"[{self.name}] Reached goal.")
                 self.state.set_activity_state(ActivityState.WORKING)
                 return
-
+            if self.replan_counter == 600:
+                self.plan_new_path(self.goal, obstacles=[])
+                self.replan_counter = 0
             self._move_rover()
+            self.replan_counter += 1
+            # gdy task exploracji to w trasie skanuj i dodaj do listy gdy wykryje nowy punkt wg id
+            if self.current_task ['type'] == 'explore_point':
+                detected = self.detect_marker()
+                if detected:
+                    for point in detected:
+                        if all(p[0] != point[0] for p in self.discovered_markers):
+                            logging.info(f"[{self.name}] Znaleziono nowy id:{point[0]} na [{point[1]}, {point[2]}].")
+                            self.discovered_markers.append(point)
             return
         # 3. Jeśli WORKING — wykonaj zadanie
         if self.state.activity_state() == ActivityState.WORKING:
@@ -89,11 +102,13 @@ class Rover:
         # there are markers then locate then
         if markers:
             for marker in markers:
+                id = marker[0]
+                #rvec = marker[1]
                 tvec = marker[2]
                 rotm = marker[3]
                 marker_position, marker_orientation = self.detector.calculate_marker_location(tvec, rotm)
                 # print(f"Found marker! \n at:{marker_position[0]},{marker_position[1]},{marker_position[2]}  \n with orientation:{marker_orientation[0]},{marker_orientation[1]},{marker_orientation[2]}")
-                detected.append([marker_position[0], marker_position[1], 10])
+                detected.append([id, marker_position[0], marker_position[1], 10])
 
         return detected
 
@@ -108,7 +123,7 @@ class Rover:
         self.planner.update_state(self.get_position(), goal, obstacles)
         # get path
         self.planner.plan()
-        # if path empty then try 10 times
+        # if path empty then try 15 times with more steps
         i = 0
         while self.planner.path_ is None or i >15:
             self.planner.increase_iterations()
@@ -151,6 +166,15 @@ class Rover:
             self.deploy_rover_arm()
             self.retract_rover_arm()
             print(f"Nowa wilgotność w polu {task['field_name']}: {self.centrala.fields[task['field_name']].humidity}")
+        elif task['type'] == 'explore_point':
+            if self.discovered_markers:
+                for point in self.discovered_markers:
+                    marker_id = point[0]
+                    position = [point[1], point[2], point[3]]
+                    # na razie uproszczone
+                    field_parameters_from_scan = {'humidity': 40}
+                    self.centrala.report_discovered_field(self.name, marker_id, position, field_parameters_from_scan)
+                logging.info(f"[{self.name}] Przesłano odkryte w liczbie {len(self.discovered_markers)}.")
         elif task['type'] == "visit_scan":
             pass
     # todo: bateria
