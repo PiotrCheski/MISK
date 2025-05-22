@@ -46,7 +46,8 @@ class Rover:
             
             self.current_task = task
             self.goal = task['target_coords']
-            self.plan_new_path(self.goal, obstacles=[])
+            obstacles = self.find_obstacles(self.sim, self.goal)
+            self.plan_new_path(self.goal, obstacles)
             self.state.set_activity_state(ActivityState.MOVING)
             logging.info(f"[{self.name}] Nowe zadanie: {task['type']} dla pola {task['field_name']}.")
 
@@ -58,7 +59,8 @@ class Rover:
                 self.state.set_activity_state(ActivityState.WORKING)
                 return
             if self.replan_counter == 600:
-                self.plan_new_path(self.goal, obstacles=[])
+                obstacles = self.find_obstacles(self.sim, self.goal)
+                self.plan_new_path(self.goal, obstacles)
                 self.replan_counter = 0
             self._move_rover()
             self.replan_counter += 1
@@ -177,4 +179,27 @@ class Rover:
                 logging.info(f"[{self.name}] Przesłano odkryte w liczbie {len(self.discovered_markers)}.")
         elif task['type'] == "visit_scan":
             pass
-    # todo: bateria
+    
+    def find_obstacles(self, sim, goal):
+        obstacles = []
+        centrala_handle = sim.getObject('/Centrala')
+        position = sim.getObjectPosition(centrala_handle, -1)
+        x, y = position[0], position[1]
+        z = 0.5*1.5
+        centrala_pos = [x, y, z]
+        obstacles.append(centrala_pos)
+        #i = 0
+        #while True:
+        #        name = f'Plane[{i}]'
+        #        try:
+        #            handle = sim.getObject(f'/{name}')
+        #        except Exception:
+        #            break
+#
+        #        position = sim.getObjectPosition(handle, -1)
+        #        x, y = position[0], position[1]
+#
+        #        if [x, y] != [self.goal[0], self.goal[1]]:
+        #            obstacles.append((x, y, 0.25)) 
+        #        i += 1
+        return obstacles 
