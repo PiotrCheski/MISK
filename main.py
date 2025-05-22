@@ -26,13 +26,16 @@ def main():
     print("[Main] Starting Centrala...")
     centrala = Centrala(client)
 
-    num_rovers = 1
+    num_rovers = 2
 
     sim_object_names = [f"Rover{i}" for i in range(num_rovers)]
 
+    rover_name = "/Rover0"
+    rover_handle = sim.getObject(rover_name)
+    position = sim.getObjectPosition(rover_handle, -1)
+    pos_x, pos_y = position[0], position[1]
     for i in range(1, num_rovers):
-        rover_name = "/Rover0"
-        duplicate_rover(sim, rover_name, sim_object_names[i], position_offset=i * 0.5)
+        duplicate_rover(sim, rover_name, sim_object_names[i], pos_x, pos_y, pos_z=0.375)
 
     rover_names_list = [Rover(sim, sim_object_names[i], centrala)
                         for i in range(num_rovers)]

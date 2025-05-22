@@ -1,6 +1,6 @@
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 
-def remove_objects_with_prefix(prefix="Planner"):
+def remove_objects_with_prefix(prefix="Plane"):
     client = RemoteAPIClient()
     sim = client.require('sim')
 

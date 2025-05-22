@@ -188,18 +188,33 @@ class Rover:
         z = 0.5*1.5
         centrala_pos = [x, y, z]
         obstacles.append(centrala_pos)
-        #i = 0
-        #while True:
-        #        name = f'Plane[{i}]'
-        #        try:
-        #            handle = sim.getObject(f'/{name}')
-        #        except Exception:
-        #            break
-#
-        #        position = sim.getObjectPosition(handle, -1)
-        #        x, y = position[0], position[1]
-#
-        #        if [x, y] != [self.goal[0], self.goal[1]]:
-        #            obstacles.append((x, y, 0.25)) 
-        #        i += 1
+        rover_x, rover_y, rover_z = self.get_position()
+        margin = 0.25
+        i = 0
+        while True:
+                name = f'Plane[{i}]'
+                try:
+                    handle = sim.getObject(f'/{name}')
+                except Exception:
+                    break
+
+                position = sim.getObjectPosition(handle, -1)
+                x, y = position[0], position[1]
+
+                if [x, y] != [goal[0], goal[1]] and (abs(x - rover_x) > margin or abs(y - rover_y) > margin):
+                    obstacles.append((x, y, 1.0)) 
+                i += 1
+        i = 0
+        while True:
+                name = f'Rock[{i}]'
+                try:
+                    handle = sim.getObject(f'/{name}')
+                except Exception:
+                    break
+
+                position = sim.getObjectPosition(handle, -1)
+                print(position)
+                x, y = position[0], position[1]
+                obstacles.append((x, y, 0.50)) 
+                i += 1
         return obstacles 

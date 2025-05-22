@@ -32,11 +32,11 @@ def is_overlapping(x, y):
     return False
 
 def generate_areas():
-    grid_rows = 5
-    grid_cols = 5
+    grid_rows = 3
+    grid_cols = 3
     amount_of_areas = grid_rows * grid_cols - 1 # na środku jest centrala
     generate_aruco_textures(texture_path, textures_dir, amount_of_areas)
-    spacing = 2.0
+    spacing = 3.0
     start_x = -((grid_cols - 1) * spacing) / 2
     start_y = -((grid_rows - 1) * spacing) / 2
     index = 0
