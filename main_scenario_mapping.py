@@ -24,9 +24,9 @@ def main():
     sim.startSimulation()
 
     print("[Main] Starting Centrala...")
-    centrala = Centrala(client)
+    centrala = Centrala(client, True)
 
-    num_rovers = 2
+    num_rovers = 1
 
     sim_object_names = [f"Rover{i}" for i in range(num_rovers)]
 
@@ -36,9 +36,6 @@ def main():
 
     rover_names_list = [Rover(sim, sim_object_names[i], centrala)
                         for i in range(num_rovers)]
-    
-    # uruchomienie scenariusz mapowania
-    centrala.initiate_remapping_procedure()
 
     try:
         while True:

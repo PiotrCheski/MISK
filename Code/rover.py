@@ -43,9 +43,13 @@ class Rover:
             if task is None:
                 logging.debug(f"[{self.name}] Brak nowych zadań.")
                 return
-            
             self.current_task = task
-            self.goal = task['target_coords']
+
+            if task['type'] == 'explore_point':
+                self.goal = task['details']['target_coords_explore']
+            else:
+                self.goal = task['details']['target_coords']
+                
             obstacles = self.find_obstacles(self.sim, self.goal)
             self.plan_new_path(self.goal, obstacles)
             self.state.set_activity_state(ActivityState.MOVING)
@@ -65,7 +69,7 @@ class Rover:
             self._move_rover()
             self.replan_counter += 1
             # gdy task exploracji to w trasie skanuj i dodaj do listy gdy wykryje nowy punkt wg id
-            if self.current_task ['type'] == 'explore_point':
+            if self.current_task['type'] == 'explore_point':
                 detected = self.detect_marker()
                 if detected:
                     for point in detected:
@@ -172,11 +176,13 @@ class Rover:
             if self.discovered_markers:
                 for point in self.discovered_markers:
                     marker_id = point[0]
-                    position = [point[1], point[2], point[3]]
+                    position = [point[1], point[2], 15]
                     # na razie uproszczone
                     field_parameters_from_scan = {'humidity': 40}
                     self.centrala.report_discovered_field(self.name, marker_id, position, field_parameters_from_scan)
-                logging.info(f"[{self.name}] Przesłano odkryte w liczbie {len(self.discovered_markers)}.")
+                # zgłoś i wyczyść
+                logging.info(f"[{self.name}] Przesłano odkryte punkty w liczbie {len(self.discovered_markers)}, są nimi: {self.discovered_markers}")
+                self.discovered_markers = []
         elif task['type'] == "visit_scan":
             pass
     
@@ -190,6 +196,7 @@ class Rover:
         obstacles.append(centrala_pos)
         rover_x, rover_y, rover_z = self.get_position()
         margin = 0.25
+        """
         i = 0
         while True:
                 name = f'Plane[{i}]'
@@ -204,6 +211,7 @@ class Rover:
                 if [x, y] != [goal[0], goal[1]] and (abs(x - rover_x) > margin or abs(y - rover_y) > margin):
                     obstacles.append((x, y, 1.0)) 
                 i += 1
+        """
         i = 0
         while True:
                 name = f'Rock[{i}]'

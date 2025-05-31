@@ -401,9 +401,9 @@ class Centrala:
     def initiate_remapping_procedure(self):
         print("[Centrala] Inicjacja procedury generowania zadań eksploracyjnych...")
         # Parametry siatki eksploracji
-        min_x, max_x = -7, 7 
-        min_y, max_y = -7, 7
-        step = 2.0 # Rozmiar "oczek" siatki
+        min_x, max_x = -4, 4 
+        min_y, max_y = -4, 4
+        step = 0.5 # Rozmiar "oczek" siatki
 
         # Usuń stare zadania typu 'explore_point' (jeśli są, na wypadek ponownego mapowania)
         # Ale tylko jeśli to nie jest pierwsze generowanie w fazie mapowania
@@ -421,6 +421,9 @@ class Centrala:
                             too_close_to_known_field = True
                             break
                 if too_close_to_known_field:
+                    continue
+                # punkt nie może być w miejscu centrali
+                if (x_coord>-0.4 and x_coord<0.4) and (y_coord>-0.4 and y_coord<0.4):
                     continue
 
                 details = {'target_coords_explore': (x_coord, y_coord, 0.25)} # Wysokość Z do ustawienia
