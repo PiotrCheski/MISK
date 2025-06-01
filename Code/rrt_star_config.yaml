@@ -8,5 +8,5 @@ search_radius : 0.1 # odległość w której szuka sąsiadów
 goal_radius : 0.15  # odległość w której uznaje że dotarł do celu
 
 # for visualization
-sizes : [0.02, 0.02, 0.02]
+sizes : [0.2, 0.2, 0.2]
 height : 0.1

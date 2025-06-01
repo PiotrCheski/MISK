@@ -4,6 +4,7 @@ import threading
 import random
 import math
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
+from Code.rrt_star_visualise import visualise_obstacles
 from Code.area import Area
 
 # Stałe konfiguracyjne dla Centrali
@@ -309,11 +310,16 @@ class Centrala:
                         # Można by spróbować ponownie, albo zatrzymać, albo przejść do trybu czuwania.
                         # Na razie przechodzimy dalej, ale z ostrzeżeniem.
                     else:
-                        print(f"[Centrala] Faza mapowania zakończona. Odkryto {len(self.fields)} pól.")
-                    
+                        print(f"[Centrala] Faza mapowania zakończona. Odkryto {len(self.fields)} pól. Wyświetlam pozycje na mapie.")
+                        temp_counter = 0
+                        for field in self.fields:
+                            print(f"[Centrala] Pole: {field.name} na pozycji: {field.x},{field.y}")
+                            visualise_obstacles(self.sim, [field.x, field.y], temp_counter)
+                            temp_counter+=1
                     self.mapping_phase_active = False
                     self.initial_mapping_tasks_generated = False # Reset na wypadek ponownego mapowania
-                    print("[Centrala] Przechodzę do normalnego trybu operacyjnego.")
+                    print("[Centrala] Koniec scenariusza.")
+                    return
                     # Po zakończeniu mapowania, można zainicjalizować przeszkody na nowo,
                     # jeśli `report_discovered_field` nie dodawał ich dynamicznie.
                     # Ale obecna `report_discovered_field` dodaje, więc to jest OK.
