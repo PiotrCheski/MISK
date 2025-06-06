@@ -449,68 +449,91 @@ class Centrala:
 
 
     def report_discovered_field(self, rover_id, marker_id, detected_position_world, field_parameters_from_scan):
-        discovered_field_name = f"Field_{marker_id}" 
+        discovered_field_name = f"Field_{marker_id}"
+        path_to_object = f"/{discovered_field_name}" # Use path notation
+
+        print("*" * 50)
+        print(f"[Centrala] Łazik {rover_id} zgłosił odkrycie pola {discovered_field_name} na pozycji {detected_position_world} (marker: {marker_id}).")
+        print("*" * 50)
 
         if discovered_field_name in self.fields:
-            print(f"[Centrala] Łazik {rover_id} zgłosił pole {discovered_field_name}, które już jest znane. Aktualizacja pozycji/danych.")
+            print(f"[Centrala] Pole {discovered_field_name} już w rejestrze Centrali. Aktualizacja pozycji/danych w Centrali.")
             field_obj = self.fields[discovered_field_name]
-            field_obj.x, field_obj.y, field_obj.z = detected_position_world
+            
+            # Convert numpy types to python floats for internal storage if desired, or ensure Area class handles it.
+            # For this example, assume Area class stores them as python floats or handles conversion.
+            field_obj.x, field_obj.y, field_obj.z = float(detected_position_world[0]), float(detected_position_world[1]), float(detected_position_world[2])
+            
             field_obj.humidity = field_parameters_from_scan.get('humidity', field_obj.humidity)
             field_obj.pH = field_parameters_from_scan.get('pH', field_obj.pH)
             field_obj.last_visited_time = time.time()
             
+            # Update obstacle list if necessary
             found_in_obstacles = False
             for obs in self.obstacle_list:
                 if obs.get('type') == 'field' and obs.get('id') == discovered_field_name:
-                    obs['x'], obs['y'] = detected_position_world[0], detected_position_world[1]
+                    obs['x'], obs['y'] = float(detected_position_world[0]), float(detected_position_world[1])
                     found_in_obstacles = True
                     break
-            if not found_in_obstacles:
-                 self.obstacle_list.append({'x': detected_position_world[0], 'y': detected_position_world[1], 'radius': FIELD_RADIUS_FOR_OBSTACLES, 'type': 'field', 'id': discovered_field_name})
+            if not found_in_obstacles: # Should not happen if it's already in self.fields and obstacle list is synced
+                 self.obstacle_list.append({'x': float(detected_position_world[0]), 'y': float(detected_position_world[1]), 'radius': FIELD_RADIUS_FOR_OBSTACLES, 'type': 'field', 'id': discovered_field_name})
         else:
             print(f"[Centrala] Łazik {rover_id} odkrył NOWE pole {discovered_field_name} (marker: {marker_id}) na {detected_position_world}!")
             
-            # Sprawdzenie, czy obiekt o tej nazwie już istnieje w symulacji (np. z poprzedniego uruchomienia, ale nie w self.fields)
-            existing_handle = self.sim.getObjectHandle(discovered_field_name)
-            if existing_handle != -1:
-                print(f"[Centrala] Uwaga: Obiekt {discovered_field_name} już istnieje w symulacji, ale nie był w rejestrze. Używam istniejącego uchwytu.")
-                handle_for_new_field = existing_handle
-                # Można by zaktualizować jego pozycję w symulacji, jeśli się różni
-                # self.sim.setObjectPosition(handle_for_new_field, -1, detected_position_world)
+            existing_handle_in_sim = -1
+            try:
+                # Attempt to get object from simulation
+                existing_handle_in_sim = self.sim.getObject(path_to_object)
+            except Exception: # Catch any exception from sim.getObject (e.g., object not found)
+                existing_handle_in_sim = -1 # Explicitly set to -1 if not found or error
+
+            handle_for_new_field = -1
+
+            if existing_handle_in_sim != -1:
+                print(f"[Centrala] Uwaga: Obiekt {discovered_field_name} (path: {path_to_object}) już istnieje w symulacji, ale nie był w rejestrze Centrali. Używam istniejącego uchwytu {existing_handle_in_sim}.")
+                handle_for_new_field = existing_handle_in_sim
+                # Optionally, update its position in the simulation if it differs significantly
+                # current_sim_pos = self.sim.getObjectPosition(handle_for_new_field, -1)
+                # if significantly_different(current_sim_pos, detected_position_world):
+                #    self.sim.setObjectPosition(handle_for_new_field, -1, [float(c) for c in detected_position_world])
             else:
-                # Opcjonalnie: Stwórz obiekt w symulacji
-                print(f"[Centrala] Tworzenie nowego obiektu '{discovered_field_name}' w symulacji...")
+                print(f"[Centrala] Tworzenie nowego obiektu '{discovered_field_name}' (path: {path_to_object}) w symulacji...")
                 try:
-                    # Przykładowo: stwórz sześcian reprezentujący pole
-                    # Rozmiary i typ do dostosowania
-                    shape_handle = self.sim.createPrimitiveShape(self.sim.primitiveshape_cuboid, [0.5, 0.5, 0.1]) # sizeX, sizeY, sizeZ
-                    self.sim.setObjectAlias(shape_handle, discovered_field_name)
-                    self.sim.setObjectPosition(shape_handle, -1, detected_position_world)
-                    # Ustaw właściwości wizualne, np. kolor
-                    self.sim.setShapeColor(shape_handle, None, self.sim.colorcomponent_ambient_diffuse, [0.2, 0.6, 0.2]) # RGB zielonkawy
+                    shape_handle = self.sim.createPrimitiveShape(self.sim.primitiveshape_cuboid, [0.5, 0.5, 0.1])
+                    self.sim.setObjectAlias(shape_handle, discovered_field_name) # Set the alias
+                    
+                    # Convert to python floats for setObjectPosition
+                    position_for_sim_api = [float(c) for c in detected_position_world]
+                    self.sim.setObjectPosition(shape_handle, -1, position_for_sim_api)
+                    
+                    self.sim.setShapeColor(shape_handle, None, self.sim.colorcomponent_ambient_diffuse, [0.2, 0.6, 0.2])
                     handle_for_new_field = shape_handle
                     print(f"[Centrala] Stworzono obiekt {discovered_field_name} w symulacji z uchwytem {handle_for_new_field}.")
                 except Exception as e:
                     print(f"[Centrala] Błąd podczas tworzenia obiektu {discovered_field_name} w symulacji: {e}")
-                    handle_for_new_field = -1 # Nie udało się stworzyć obiektu
+                    handle_for_new_field = -1 
+
+            # Convert numpy types to python floats before passing to Area constructor
+            pos_x_float = float(detected_position_world[0])
+            pos_y_float = float(detected_position_world[1])
+            pos_z_float = float(detected_position_world[2])
 
             new_area_obj = Area(
-                detected_position_world[0], detected_position_world[1], detected_position_world[2],
+                pos_x_float, pos_y_float, pos_z_float,
                 field_parameters_from_scan.get('humidity', 50),
                 field_parameters_from_scan.get('pH', 7.0),
                 field_parameters_from_scan.get('microbiome', "Unknown"),
                 field_parameters_from_scan.get('temperature', 20.0),
                 field_parameters_from_scan.get('minerals', "Unknown"),
                 name=discovered_field_name,       
-                handle=handle_for_new_field, # Użyj uchwytu stworzonego obiektu lub -1                
+                handle=handle_for_new_field,              
                 last_visited_time=time.time()     
             )
             self.fields[discovered_field_name] = new_area_obj
             
-            # Zapisz dane SoilData do nowego obiektu w symulacji, jeśli został stworzony
             if handle_for_new_field != -1:
                 soil_data_to_write = {
-                    "area": (new_area_obj.x, new_area_obj.y, new_area_obj.z),
+                    "area": (new_area_obj.x, new_area_obj.y, new_area_obj.z), # These should be python floats now
                     "humidity": new_area_obj.humidity,
                     "pH": new_area_obj.pH,
                     "microbiome": new_area_obj.microbiome,
@@ -523,7 +546,6 @@ class Centrala:
                 except Exception as e:
                     print(f"[Centrala] Błąd podczas zapisu SoilData dla nowego pola {discovered_field_name}: {e}")
 
-            # Dodaj jako przeszkodę
             self.obstacle_list.append({'x': new_area_obj.x, 'y': new_area_obj.y, 'radius': FIELD_RADIUS_FOR_OBSTACLES, 'type': 'field', 'id': discovered_field_name})
             print(f"[Centrala] Dodano nowe pole {discovered_field_name} do rejestru i listy przeszkód.")
 

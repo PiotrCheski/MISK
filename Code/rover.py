@@ -48,7 +48,7 @@ class Rover:
             if task['type'] == 'explore_point':
                 self.goal = task['details']['target_coords_explore']
             else:
-                self.goal = task['details']['target_coords']
+                self.goal = task['target_coords']
                 
             obstacles = self.find_obstacles(self.sim, self.goal)
             self.plan_new_path(self.goal, obstacles)
