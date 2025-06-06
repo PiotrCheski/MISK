@@ -24,24 +24,40 @@ def main():
     sim.startSimulation()
 
     print("[Main] Starting Centrala...")
-    centrala = Centrala(client, True)
+    centrala = Centrala(client)
 
-    num_rovers = 2
+    num_rovers = 3
 
     sim_object_names = [f"Rover{i}" for i in range(num_rovers)]
+
     rover_name = "/Rover0"
+    rover_handle = sim.getObject(rover_name)
+    position = sim.getObjectPosition(rover_handle, -1)
     pos_x, pos_y = -4, -4
     for i in range(1, num_rovers):
         duplicate_rover(sim, rover_name, sim_object_names[i], pos_x, pos_y+i, pos_z=0.375)
 
     rover_names_list = [Rover(sim, sim_object_names[i], centrala)
                         for i in range(num_rovers)]
+    print(rover_names_list)
+    start_time = time.time()
+    rover_removed = False
 
     try:
         while True:
+            current_time = time.time()
+            elapsed_time = current_time - start_time
+
+            # Usunięcie Rover0 po 30 sekundach czasu rzeczywistego
+            if not rover_removed and elapsed_time >= 20:
+                rover_names_list.pop(0)  # Usuwa Rover0 z listy
+                rover_removed = True
+                print("[Main] Rover0 removed after 30 seconds of real time.")
+
             for rover in rover_names_list:
                 rover.tick()
             sim.step()
+
     except KeyboardInterrupt:
         print("[Main] Stopping...")
         centrala.stop()
