@@ -3,15 +3,18 @@ import time
 import threading
 import random
 import math
+import csv
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 from Code.rrt_star_visualise import visualise_obstacles
 from Code.area import Area
+from datetime import datetime
+import os
 
 # Stałe konfiguracyjne dla Centrali
 CRITICAL_HUMIDITY = 40.0
 CRITICAL_PH_LOW = 5.8
 CRITICAL_PH_HIGH = 8.2
-MAX_SECONDS_SINCE_LAST_VISIT = 300
+MAX_SECONDS_SINCE_LAST_VISIT = 100
 FIELD_RADIUS_FOR_OBSTACLES = 0.7
 ROVER_RADIUS_FOR_OBSTACLES = 0.5
 
@@ -30,6 +33,9 @@ class Centrala:
         # Nowa flaga dla fazy mapowania
         self.mapping_phase_active = start_with_mapping_phase
         self.initial_mapping_tasks_generated = False # Pomocnicza flaga
+
+        self.task_log = []
+        self.initialize_task_log_csv()
 
         print("[Centrala] Inicjalizacja...")
         if self.mapping_phase_active:
@@ -192,6 +198,11 @@ class Centrala:
         self.rovers[rover_id]['current_task_id'] = task_to_assign['id']
         self.rovers[rover_id]['current_task_target_field_name'] = task_to_assign['field_name'] 
         self.rovers[rover_id]['status'] = 'assigned_task'
+
+        self.rovers[rover_id]['current_task_data'] = task_to_assign
+        assignment_time = datetime.now().strftime("%H:%M:%S")
+        task_to_assign['assigned_rover'] = rover_id
+        task_to_assign['assignment_time'] = assignment_time
         
         target_field_obj = self.fields.get(task_to_assign['field_name'])
         if not target_field_obj and task_to_assign['type'] != 'explore_point': 
@@ -225,6 +236,23 @@ class Centrala:
             return # Zmienione: nie czyść current_task_id jeśli nie pasuje, pozwól łazikowi samemu przejść do idle
 
         print(f"[Centrala] Łazik {rover_id} raportuje ukończenie zadania {task_id} (sukces: {success}).")
+        completion_time = datetime.now().strftime("%H:%M:%S")
+        task_id = self.rovers[rover_id]['current_task_id']
+        original_task_data = self.rovers[rover_id].get('current_task_data', {})
+        original_task_type = original_task_data.get('type', 'N/A')
+        field_name = self.rovers[rover_id]['current_task_target_field_name']
+        assignment_time = self.rovers[rover_id]['current_task_data'].get('assignment_time', 'N/A')
+        task_data_for_csv = {
+            'Numer zadania': task_id,
+            'Nazwa zadania': rover_info['current_task_data'].get('type', 'unknown'),
+            'Numer pola': field_name,
+            'Łazik': rover_id,
+            'Czas wystawienia': assignment_time,
+            'Czas zrealizowania': completion_time
+        }
+        self.log_task_to_csv(task_data_for_csv)
+
+
         original_task_type = "unknown" # Spróbujmy znaleźć typ oryginalnego zadania
         # Szukanie zadania po ID - to jest trochę obejście, bo zadanie znika z kolejki.
         # Lepiej by było, gdyby łazik sam przesyłał typ zadania.
@@ -556,3 +584,33 @@ class Centrala:
         if self.simulation_thread.is_alive():
             self.simulation_thread.join(timeout=5) 
         print("[Centrala] Zatrzymana.")
+
+    def initialize_task_log_csv(self):
+        current_time = datetime.now().strftime("%H-%M-%S")
+        self.task_log_filename = f"task_log_{current_time}.csv"
+        self.task_log = []  # Do logowania danych w pamięci (jeśli chcesz)
+    
+        with open(self.task_log_filename, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                "Numer zadania", "Nazwa zadania", "Numer pola", 
+                "Łazik", "Czas wystawienia", "Czas zrealizowania"
+            ])
+        
+        print(f"[Centrala] Utworzono nowy plik CSV do logowania zadań: {self.task_log_filename}")
+
+    def log_task_to_csv(self, task_data):
+        if not hasattr(self, 'task_log_filename'):
+            print("[Centrala] Błąd: Plik CSV nie został zainicjalizowany.")
+            return
+        
+        with open(self.task_log_filename, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                task_data['Numer zadania'],
+                task_data['Nazwa zadania'],
+                task_data['Numer pola'],
+                task_data['Łazik'],
+                task_data['Czas wystawienia'],
+                task_data['Czas zrealizowania']
+            ])
