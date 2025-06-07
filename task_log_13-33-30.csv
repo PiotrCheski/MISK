@@ -1,0 +1,8 @@
+Numer zadania,Nazwa zadania,Numer pola,£azik,Czas wystawienia,Czas zrealizowania
+1,adjust_pH,Field_4,Rover0,0,9.45
+2,restore_humidity,Field_1,Rover0,83.55,91.65
+3,visit_scan,Field_0,Rover0,160.5,168.25
+5,visit_scan,Field_2,Rover0,168.7,183.75
+4,visit_scan,Field_1,Rover1,160.5,186.7
+7,visit_scan,Field_4,Rover1,187.15,194.6
+6,visit_scan,Field_3,Rover0,184.2,197.25

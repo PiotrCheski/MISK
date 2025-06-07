@@ -200,7 +200,8 @@ class Centrala:
         self.rovers[rover_id]['status'] = 'assigned_task'
 
         self.rovers[rover_id]['current_task_data'] = task_to_assign
-        assignment_time = datetime.now().strftime("%H:%M:%S")
+        assignment_time = self.sim.getSimulationTime()
+        #assignment_time = datetime.now().strftime("%H:%M:%S")
         task_to_assign['assigned_rover'] = rover_id
         task_to_assign['assignment_time'] = assignment_time
         
@@ -236,7 +237,7 @@ class Centrala:
             return # Zmienione: nie czyść current_task_id jeśli nie pasuje, pozwól łazikowi samemu przejść do idle
 
         print(f"[Centrala] Łazik {rover_id} raportuje ukończenie zadania {task_id} (sukces: {success}).")
-        completion_time = datetime.now().strftime("%H:%M:%S")
+        completion_time = self.sim.getSimulationTime()
         task_id = self.rovers[rover_id]['current_task_id']
         original_task_data = self.rovers[rover_id].get('current_task_data', {})
         original_task_type = original_task_data.get('type', 'N/A')
