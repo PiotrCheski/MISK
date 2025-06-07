@@ -49,7 +49,7 @@ def main():
             elapsed_time = current_time - start_time
 
             # Usunięcie Rover0 po 30 sekundach czasu rzeczywistego
-            if not rover_removed and elapsed_time >= 20:
+            if not rover_removed and elapsed_time >= 900:
                 rover_names_list.pop(0)  # Usuwa Rover0 z listy
                 rover_removed = True
                 print("[Main] Rover0 removed after 30 seconds of real time.")

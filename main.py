@@ -26,7 +26,7 @@ def main():
     print("[Main] Starting Centrala...")
     centrala = Centrala(client)
 
-    num_rovers = 2
+    num_rovers = 3
 
     sim_object_names = [f"Rover{i}" for i in range(num_rovers)]
 
