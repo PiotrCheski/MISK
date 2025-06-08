@@ -176,7 +176,7 @@ class Rover:
             if self.discovered_markers:
                 for point in self.discovered_markers:
                     marker_id = point[0]
-                    position = [point[1], point[2], 15]
+                    position = [point[1], point[2], 1]
                     # na razie uproszczone
                     field_parameters_from_scan = {'humidity': 40}
                     self.centrala.report_discovered_field(self.name, marker_id, position, field_parameters_from_scan)
@@ -221,7 +221,7 @@ class Rover:
                     break
 
                 position = sim.getObjectPosition(handle, -1)
-                print(position)
+                #print(position)
                 x, y = position[0], position[1]
                 obstacles.append((x, y, 0.50)) 
                 i += 1

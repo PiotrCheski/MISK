@@ -341,8 +341,8 @@ class Centrala:
                     else:
                         print(f"[Centrala] Faza mapowania zakończona. Odkryto {len(self.fields)} pól. Wyświetlam pozycje na mapie.")
                         temp_counter = 0
-                        for field in self.fields:
-                            print(f"[Centrala] Pole: {field.name} na pozycji: {field.x},{field.y}")
+                        for name, field in self.fields.items():
+                            print(f"[Centrala] Pole: {name} na pozycji: {field.x},{field.y}")
                             visualise_obstacles(self.sim, [field.x, field.y], temp_counter)
                             temp_counter+=1
                     self.mapping_phase_active = False
@@ -436,9 +436,9 @@ class Centrala:
     def initiate_remapping_procedure(self):
         print("[Centrala] Inicjacja procedury generowania zadań eksploracyjnych...")
         # Parametry siatki eksploracji
-        min_x, max_x = -4, 4 
-        min_y, max_y = -4, 4
-        step = 0.5 # Rozmiar "oczek" siatki
+        min_x, max_x = -4.4, 4.4 
+        min_y, max_y = -4.4, 4.4
+        step = 0.2 # Rozmiar "oczek" siatki
 
         # Usuń stare zadania typu 'explore_point' (jeśli są, na wypadek ponownego mapowania)
         # Ale tylko jeśli to nie jest pierwsze generowanie w fazie mapowania
@@ -458,7 +458,7 @@ class Centrala:
                 if too_close_to_known_field:
                     continue
                 # punkt nie może być w miejscu centrali
-                if (x_coord>-0.4 and x_coord<0.4) and (y_coord>-0.4 and y_coord<0.4):
+                if (x_coord>-1 and x_coord<1) and (y_coord>-1 and y_coord<1):
                     continue
 
                 details = {'target_coords_explore': (x_coord, y_coord, 0.25)} # Wysokość Z do ustawienia
